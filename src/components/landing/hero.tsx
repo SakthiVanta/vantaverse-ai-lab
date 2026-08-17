@@ -1,0 +1,75 @@
+"use client";
+
+import Link from "next/link";
+import { motion } from "motion/react";
+import { ArrowRight, Sparkles } from "lucide-react";
+
+const container = {
+  hidden: {},
+  show: {
+    transition: { staggerChildren: 0.09, delayChildren: 0.1 },
+  },
+};
+
+const item = {
+  hidden: { opacity: 0, y: 22, filter: "blur(6px)" },
+  show: {
+    opacity: 1,
+    y: 0,
+    filter: "blur(0px)",
+    transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] as const },
+  },
+};
+
+export function Hero() {
+  return (
+    <motion.section
+      variants={container}
+      initial="hidden"
+      animate="show"
+      className="relative z-10 mx-auto flex w-full max-w-5xl flex-col items-center px-6 pt-14 pb-24 text-center sm:pt-20 sm:pb-32"
+    >
+      <motion.div
+        variants={item}
+        className="mb-8 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-4 py-1.5 text-xs font-medium text-foreground/60 backdrop-blur-sm"
+      >
+        <Sparkles className="h-3.5 w-3.5 text-vv-cyan" />
+        AI Builder Lab · Phase 1
+      </motion.div>
+
+      <motion.h1
+        variants={item}
+        className="font-heading text-4xl font-semibold leading-[1.05] tracking-tight sm:text-6xl md:text-7xl"
+      >
+        <span className="block text-foreground/50">DON&apos;T TELL US</span>
+        <span className="block text-foreground">WHAT YOU CAN BUILD.</span>
+        <span className="text-gradient mt-2 block">SHOW US HOW YOU THINK.</span>
+      </motion.h1>
+
+      <motion.p
+        variants={item}
+        className="mx-auto mt-8 max-w-xl text-balance text-base text-foreground/60 sm:text-lg"
+      >
+        No forms. No surveys. A set of real situations, your GitHub building
+        history, and an AI that reads signal — not scores.
+      </motion.p>
+
+      <motion.div variants={item} className="mt-10">
+        <Link
+          href="/onboarding"
+          className="group relative inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-vv-violet via-vv-magenta to-vv-cyan bg-[length:200%_100%] bg-[position:0%_0%] px-8 py-4 text-sm font-semibold tracking-wide text-white shadow-[0_0_40px_-8px_var(--vv-violet)] transition-[background-position,transform] duration-500 ease-out hover:bg-[position:100%_0%] hover:scale-[1.03] active:scale-[0.98]"
+        >
+          ENTER THE LAB
+          <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+        </Link>
+      </motion.div>
+
+      <motion.p
+        variants={item}
+        className="mt-5 text-xs uppercase tracking-[0.25em] text-foreground/40"
+      >
+        Builder Discovery · ~7 minutes
+      </motion.p>
+    </motion.section>
+  );
+}
