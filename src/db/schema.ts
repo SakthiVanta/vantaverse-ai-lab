@@ -59,7 +59,6 @@ export const participants = pgTable(
 
     githubUsername: text("github_username"),
     githubConnected: boolean("github_connected").notNull().default(false),
-    githubAccessToken: text("github_access_token"),
     githubConnectedAt: timestamp("github_connected_at", { withTimezone: true }),
 
     cohort: text("cohort").notNull().default("Founding Builders — Cohort 01"),

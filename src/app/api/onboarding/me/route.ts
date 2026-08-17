@@ -1,8 +1,8 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getParticipantOnboardingState } from "@/lib/participant-state";
 
-export async function GET() {
-  const state = await getParticipantOnboardingState();
+export async function GET(req: NextRequest) {
+  const state = await getParticipantOnboardingState(req);
   if (!state) {
     return NextResponse.json({ participant: null }, { status: 200 });
   }

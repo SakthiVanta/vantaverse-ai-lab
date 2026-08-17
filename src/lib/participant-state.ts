@@ -1,11 +1,12 @@
+import type { NextRequest } from "next/server";
 import { db } from "@/db";
 import { participants, challengeResponses } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { CHALLENGES } from "@/lib/challenges";
-import { getCurrentParticipantId } from "@/lib/auth";
+import { getCurrentParticipantId, resolveParticipantId } from "@/lib/auth";
 
-export async function getParticipantOnboardingState() {
-  const participantId = await getCurrentParticipantId();
+export async function getParticipantOnboardingState(req?: NextRequest) {
+  const participantId = req ? await resolveParticipantId(req) : await getCurrentParticipantId();
   if (!participantId) return null;
 
   const participant = await db.query.participants.findFirst({

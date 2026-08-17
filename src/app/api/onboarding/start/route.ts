@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/db";
-import { participants, otpCodes } from "@/db/schema";
+import { participants } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import { generateOtp, hashOtp, otpExpiryDate, isGmailAddress } from "@/lib/otp";
-import { sendOtpEmail } from "@/lib/email";
+import { isGmailAddress } from "@/lib/otp";
+import { issueOtp } from "@/lib/otp-issuance";
 import { createParticipantSession } from "@/lib/auth";
 import { logEvent } from "@/lib/events";
 
@@ -49,30 +49,14 @@ export async function POST(req: NextRequest) {
   await createParticipantSession(participant.id);
 
   if (!participant.emailVerified) {
-    const code = generateOtp();
-    const codeHash = await hashOtp(code);
-    await db.insert(otpCodes).values({
-      participantId: participant.id,
-      codeHash,
-      expiresAt: otpExpiryDate(),
-    });
-
-    try {
-      await sendOtpEmail(email, name, code);
-    } catch (err) {
-      if (process.env.NODE_ENV === "production") {
-        console.error("Failed to send OTP email", err);
-        return NextResponse.json(
-          { error: "Could not send verification email. Try again shortly." },
-          { status: 502 }
-        );
+    const result = await issueOtp(participant.id, email, name);
+    if (!result.ok) {
+      // A resend-cooldown hit here just means they already have a live code
+      // in their inbox from a moment ago — let them proceed to enter it.
+      if (result.status !== 429) {
+        return NextResponse.json({ error: result.error }, { status: result.status });
       }
-      console.warn(
-        `[dev] SMTP not configured — OTP for ${email} is: ${code}`
-      );
     }
-
-    await logEvent(participant.id, "otp_requested");
   }
 
   return NextResponse.json({

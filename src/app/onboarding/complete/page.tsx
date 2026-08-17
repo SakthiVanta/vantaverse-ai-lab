@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "motion/react";
 import { AuroraBackground } from "@/components/landing/aurora-background";
@@ -19,11 +19,22 @@ type ResultData = {
   interests?: string[];
   githubSummary?: string | null;
   cardImageUrl?: string | null;
+  problem?: { description: string; who: string; why: string } | null;
+  firstDirection?: string;
 };
 
 export default function CompletePage() {
+  return (
+    <Suspense fallback={null}>
+      <CompletePageContent />
+    </Suspense>
+  );
+}
+
+function CompletePageContent() {
   const router = useRouter();
-  const { state, loading } = useOnboardingState();
+  const token = useSearchParams().get("token");
+  const { state, loading } = useOnboardingState(token);
   const [result, setResult] = useState<ResultData | null>(null);
   const [polling, setPolling] = useState(true);
 
@@ -45,7 +56,10 @@ export default function CompletePage() {
     let attempts = 0;
 
     async function poll() {
-      const res = await fetch("/api/onboarding/result", { cache: "no-store" });
+      const url = token
+        ? `/api/onboarding/result?token=${encodeURIComponent(token)}`
+        : "/api/onboarding/result";
+      const res = await fetch(url, { cache: "no-store" });
       const data: ResultData = await res.json();
       if (cancelled) return;
       if (data.ready) {
@@ -64,7 +78,7 @@ export default function CompletePage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [token]);
 
   return (
     <div className="relative flex min-h-screen flex-col">
@@ -181,27 +195,46 @@ function ResultView({ result, participantId }: { result: ResultData; participant
       )}
 
       {!!result.strengthSignals?.length && (
-        <div className="mt-10">
-          <p className="text-xs font-medium uppercase tracking-[0.25em] text-foreground/40">
-            What we observed
-          </p>
-          <ul className="mt-3 space-y-2">
+        <ReportSection title="What we observed">
+          <ul className="space-y-2">
             {result.strengthSignals.map((s, i) => (
               <li key={i} className="text-sm text-foreground/70">
                 · {s}
               </li>
             ))}
           </ul>
-        </div>
+        </ReportSection>
+      )}
+
+      {!!result.growthSignals?.length && (
+        <ReportSection title="Growth opportunities">
+          <ul className="space-y-2">
+            {result.growthSignals.map((s, i) => (
+              <li key={i} className="text-sm text-foreground/70">
+                · {s}
+              </li>
+            ))}
+          </ul>
+        </ReportSection>
       )}
 
       {result.githubSummary && (
-        <div className="mt-10">
-          <p className="text-xs font-medium uppercase tracking-[0.25em] text-foreground/40">
-            GitHub Building Snapshot
-          </p>
-          <p className="mt-3 text-sm text-foreground/70">{result.githubSummary}</p>
-        </div>
+        <ReportSection title="GitHub Building Snapshot">
+          <p className="text-sm text-foreground/70">{result.githubSummary}</p>
+        </ReportSection>
+      )}
+
+      {result.problem && (
+        <ReportSection title="A problem you seem naturally drawn toward">
+          <p className="text-sm text-foreground/70">{result.problem.description}</p>
+          <p className="mt-1 text-xs text-foreground/45">Who: {result.problem.who}</p>
+        </ReportSection>
+      )}
+
+      {result.firstDirection && (
+        <ReportSection title="Your first Vantaverse direction">
+          <p className="text-sm text-foreground/70">{result.firstDirection}</p>
+        </ReportSection>
       )}
 
       <div className="mt-14 flex justify-center">
@@ -213,5 +246,16 @@ function ResultView({ result, participantId }: { result: ResultData; participant
         </Link>
       </div>
     </motion.div>
+  );
+}
+
+function ReportSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="mt-10">
+      <p className="text-xs font-medium uppercase tracking-[0.25em] text-foreground/40">
+        {title}
+      </p>
+      <div className="mt-3">{children}</div>
+    </div>
   );
 }

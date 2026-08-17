@@ -6,6 +6,11 @@ import { getSpiritById } from "@/lib/spirits";
 
 export const runtime = "nodejs";
 
+// Intentionally unauthenticated: the spec (§29-30) treats the Builder Card
+// as a shareable public asset (displayed, downloaded, shared, emailed), so
+// anyone with a participant's opaque UUID can render their card image —
+// same trust model as an unlisted share link. Only name/archetype/interests
+// are exposed here, never email or raw challenge responses.
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ id: string }> }

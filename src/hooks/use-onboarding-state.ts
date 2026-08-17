@@ -28,7 +28,9 @@ const EMPTY_STATE: OnboardingState = {
   allChallengesComplete: false,
 };
 
-export function useOnboardingState() {
+/** Pass `reportToken` when the page may be opened via an emailed report
+ * link with no session cookie (e.g. /onboarding/complete?token=...). */
+export function useOnboardingState(reportToken?: string | null) {
   const [state, setState] = useState<OnboardingState | null>(null);
   const [loading, setLoading] = useState(true);
   const [reloadToken, setReloadToken] = useState(0);
@@ -39,7 +41,10 @@ export function useOnboardingState() {
     (async () => {
       setLoading(true);
       try {
-        const res = await fetch("/api/onboarding/me", { cache: "no-store" });
+        const url = reportToken
+          ? `/api/onboarding/me?token=${encodeURIComponent(reportToken)}`
+          : "/api/onboarding/me";
+        const res = await fetch(url, { cache: "no-store" });
         const data = res.ok ? ((await res.json()) as OnboardingState) : EMPTY_STATE;
         if (!cancelled) setState(data);
       } catch {
@@ -52,7 +57,7 @@ export function useOnboardingState() {
     return () => {
       cancelled = true;
     };
-  }, [reloadToken]);
+  }, [reloadToken, reportToken]);
 
   const refresh = useCallback(() => setReloadToken((t) => t + 1), []);
 

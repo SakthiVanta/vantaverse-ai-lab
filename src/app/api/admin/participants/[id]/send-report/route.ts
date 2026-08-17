@@ -4,6 +4,8 @@ import { participants, aiAnalyses } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { sendBuilderReportEmail } from "@/lib/email";
 import { logEvent } from "@/lib/events";
+import { signReportAccessToken } from "@/lib/auth";
+import { buildReportSummary } from "@/lib/report";
 
 export async function POST(
   _req: Request,
@@ -23,10 +25,15 @@ export async function POST(
   }
 
   try {
+    const token = await signReportAccessToken(id);
     await sendBuilderReportEmail(participant.email, participant.name, {
       archetype: analysis.primaryArchetype,
-      summary: analysis.githubSummary || (analysis.strengthSignals as string[])[0] || "",
-      reportUrl: `${process.env.NEXT_PUBLIC_APP_URL}/onboarding/complete`,
+      summary: buildReportSummary({
+        githubSummary: analysis.githubSummary,
+        strengthSignals: analysis.strengthSignals as string[],
+      }),
+      cardImageUrl: `${process.env.NEXT_PUBLIC_APP_URL}/api/builder-card/${id}`,
+      reportUrl: `${process.env.NEXT_PUBLIC_APP_URL}/onboarding/complete?token=${token}`,
     });
     await logEvent(id, "report_emailed");
     return NextResponse.json({ ok: true });

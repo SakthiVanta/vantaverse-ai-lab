@@ -60,7 +60,6 @@ export async function GET(req: NextRequest) {
       .set({
         githubUsername: profile.login,
         githubConnected: true,
-        githubAccessToken: accessToken,
         githubConnectedAt: new Date(),
         updatedAt: new Date(),
       })

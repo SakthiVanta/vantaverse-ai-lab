@@ -7,6 +7,7 @@ import {
   isOtpExpired,
   hasExceededAttempts,
   isGmailAddress,
+  otpResendCooldownRemaining,
   OTP_CONFIG,
 } from "./otp";
 
@@ -65,6 +66,33 @@ describe("hasExceededAttempts", () => {
 
   it("blocks once attempts reach the max", () => {
     expect(hasExceededAttempts(OTP_CONFIG.MAX_ATTEMPTS)).toBe(true);
+  });
+});
+
+describe("otpResendCooldownRemaining", () => {
+  it("allows issuing immediately when no OTP has been sent before", () => {
+    expect(otpResendCooldownRemaining(null)).toBe(0);
+  });
+
+  it("blocks issuing right after a code was sent", () => {
+    const now = new Date("2026-01-01T00:00:00Z");
+    expect(otpResendCooldownRemaining(now, now)).toBe(OTP_CONFIG.RESEND_COOLDOWN_SECONDS);
+  });
+
+  it("allows issuing again once the cooldown has fully elapsed", () => {
+    const lastIssuedAt = new Date("2026-01-01T00:00:00Z");
+    const now = new Date(
+      lastIssuedAt.getTime() + OTP_CONFIG.RESEND_COOLDOWN_SECONDS * 1000
+    );
+    expect(otpResendCooldownRemaining(lastIssuedAt, now)).toBe(0);
+  });
+
+  it("reports partial remaining time mid-cooldown", () => {
+    const lastIssuedAt = new Date("2026-01-01T00:00:00Z");
+    const now = new Date(lastIssuedAt.getTime() + 10 * 1000);
+    expect(otpResendCooldownRemaining(lastIssuedAt, now)).toBe(
+      OTP_CONFIG.RESEND_COOLDOWN_SECONDS - 10
+    );
   });
 });
 

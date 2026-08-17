@@ -2,11 +2,12 @@ import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { participants } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import { getCurrentParticipantId } from "@/lib/auth";
+import { getCurrentParticipantId, signReportAccessToken } from "@/lib/auth";
 import { getParticipantOnboardingState } from "@/lib/participant-state";
 import { runAndSaveAnalysis } from "@/lib/analysis";
 import { sendBuilderReportEmail } from "@/lib/email";
 import { logEvent } from "@/lib/events";
+import { buildReportSummary } from "@/lib/report";
 
 export async function POST() {
   const participantId = await getCurrentParticipantId();
@@ -37,10 +38,15 @@ export async function POST() {
     analysisReady = true;
 
     try {
+      const token = await signReportAccessToken(participantId);
       await sendBuilderReportEmail(state.participant.email, state.participant.name, {
         archetype: analysis.builder_identity.primary_archetype,
-        summary: analysis.github_summary || analysis.strength_signals[0] || "",
-        reportUrl: `${process.env.NEXT_PUBLIC_APP_URL}/onboarding/complete`,
+        summary: buildReportSummary({
+          githubSummary: analysis.github_summary,
+          strengthSignals: analysis.strength_signals,
+        }),
+        cardImageUrl: `${process.env.NEXT_PUBLIC_APP_URL}/api/builder-card/${participantId}`,
+        reportUrl: `${process.env.NEXT_PUBLIC_APP_URL}/onboarding/complete?token=${token}`,
       });
       await logEvent(participantId, "report_emailed");
     } catch (emailErr) {
