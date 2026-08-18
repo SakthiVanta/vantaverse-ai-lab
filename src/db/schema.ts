@@ -104,6 +104,7 @@ export const participantsRelations = relations(participants, ({ many, one }) => 
   events: many(events),
   notes: many(adminNotes),
   assignmentTargets: many(assignmentTargets),
+  notifications: many(notifications),
 }));
 
 // ── Email OTP verification ──────────────────────────────────────────
@@ -544,4 +545,45 @@ export const assignmentsRelations = relations(assignments, ({ many }) => ({
   targets: many(assignmentTargets),
   messages: many(projectMessages),
   articles: many(researchArticles),
+}));
+
+// ── Notifications (project assignments + chat @mentions) ────────────
+
+export const notificationTypeEnum = pgEnum("notification_type", [
+  "project_assigned",
+  "project_mentioned",
+]);
+
+export const notifications = pgTable(
+  "notifications",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    participantId: uuid("participant_id")
+      .notNull()
+      .references(() => participants.id, { onDelete: "cascade" }),
+    type: notificationTypeEnum("type").notNull(),
+    title: text("title").notNull(),
+    body: text("body"),
+    linkUrl: text("link_url"),
+    assignmentId: uuid("assignment_id").references(() => assignments.id, { onDelete: "cascade" }),
+    sourceMessageId: uuid("source_message_id").references(() => projectMessages.id, {
+      onDelete: "cascade",
+    }),
+    readAt: timestamp("read_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [index("notifications_participant_created_idx").on(table.participantId, table.createdAt)]
+);
+
+export const notificationsRelations = relations(notifications, ({ one }) => ({
+  participant: one(participants, {
+    fields: [notifications.participantId],
+    references: [participants.id],
+  }),
+  assignment: one(assignments, {
+    fields: [notifications.assignmentId],
+    references: [assignments.id],
+  }),
 }));

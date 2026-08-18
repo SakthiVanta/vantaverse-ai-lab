@@ -5,6 +5,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { FloatingChat } from "@/components/onboarding/floating-chat";
 import { SidebarNav } from "@/components/onboarding/sidebar-nav";
 import { MobileTabBar } from "@/components/onboarding/mobile-tab-bar";
+import { NotificationBell } from "@/components/onboarding/notification-bell";
 
 export function OnboardingShell({
   children,
@@ -47,6 +48,7 @@ export function OnboardingShell({
               <User className="h-3.5 w-3.5" />
             </Link>
           )}
+          {wide && <NotificationBell />}
           <ThemeToggle />
         </div>
       </header>

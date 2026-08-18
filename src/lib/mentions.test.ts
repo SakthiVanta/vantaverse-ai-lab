@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseMentionSegments } from "./mentions";
+import { parseMentionSegments, extractMentionedNames } from "./mentions";
 
 describe("parseMentionSegments", () => {
   it("returns a single text segment when there are no mentions", () => {
@@ -49,6 +49,25 @@ describe("parseMentionSegments", () => {
     expect(parseMentionSegments("hi @C++ Dev", ["C++ Dev"])).toEqual([
       { type: "text", value: "hi " },
       { type: "mention", value: "@C++ Dev" },
+    ]);
+  });
+});
+
+describe("extractMentionedNames", () => {
+  it("returns an empty array when there are no mentions", () => {
+    expect(extractMentionedNames("just a normal message", ["Admin", "Sakthi"])).toEqual([]);
+  });
+
+  it("returns the plain names (no @) for each distinct mention", () => {
+    expect(extractMentionedNames("@Admin and @Sakthi please review", ["Admin", "Sakthi"])).toEqual([
+      "Admin",
+      "Sakthi",
+    ]);
+  });
+
+  it("de-duplicates repeated mentions of the same name", () => {
+    expect(extractMentionedNames("@Sakthi hey @Sakthi are you there", ["Sakthi"])).toEqual([
+      "Sakthi",
     ]);
   });
 });

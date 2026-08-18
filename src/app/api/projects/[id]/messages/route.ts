@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/db";
-import { projectMessages } from "@/db/schema";
+import { projectMessages, assignments } from "@/db/schema";
 import { and, desc, eq, lt } from "drizzle-orm";
 import { resolveProjectActor } from "@/lib/project-access";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { getProjectParticipantMembers } from "@/lib/project-members";
+import { extractMentionedNames } from "@/lib/mentions";
+import { createNotification } from "@/lib/notifications";
 
 const PAGE_SIZE = 50;
 
@@ -89,6 +92,31 @@ export async function POST(
       body: parsed.data.body,
     })
     .returning();
+
+  // Notify anyone actually @mentioned in this message (not every member —
+  // a busy project chat would otherwise spam everyone on every message).
+  const members = await getProjectParticipantMembers(id);
+  const mentionedNames = extractMentionedNames(
+    parsed.data.body,
+    members.map((m) => m.name)
+  );
+  if (mentionedNames.length > 0) {
+    const project = await db.query.assignments.findFirst({ where: eq(assignments.id, id) });
+    const mentionedMembers = members.filter(
+      (m) => mentionedNames.includes(m.name) && m.id !== (actor.type === "participant" ? actor.id : null)
+    );
+    for (const member of mentionedMembers) {
+      await createNotification({
+        participantId: member.id,
+        type: "project_mentioned",
+        title: `${actor.name} mentioned you`,
+        body: project ? `In "${project.title}": ${parsed.data.body}`.slice(0, 200) : parsed.data.body.slice(0, 200),
+        linkUrl: `/onboarding/projects/${id}`,
+        assignmentId: id,
+        sourceMessageId: message.id,
+      });
+    }
+  }
 
   return NextResponse.json({
     message: {

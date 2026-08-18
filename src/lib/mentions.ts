@@ -35,3 +35,12 @@ export function parseMentionSegments(text: string, memberNames: string[]): Menti
   }
   return segments;
 }
+
+/** Just the distinct names actually @mentioned in `text` — for hooking up
+ * mention notifications without re-implementing the matching logic. */
+export function extractMentionedNames(text: string, memberNames: string[]): string[] {
+  const names = parseMentionSegments(text, memberNames)
+    .filter((s) => s.type === "mention")
+    .map((s) => s.value.slice(1));
+  return [...new Set(names)];
+}

@@ -6,6 +6,7 @@ import { and, eq, inArray } from "drizzle-orm";
 import { getCurrentAdmin } from "@/lib/auth";
 import { sendAssignmentEmail } from "@/lib/email";
 import { logEvent } from "@/lib/events";
+import { createNotification } from "@/lib/notifications";
 
 const bodySchema = z.object({
   participantIds: z.array(z.string().uuid()).min(1).max(200),
@@ -63,6 +64,14 @@ export async function POST(
       console.warn(`Assignment email failed for ${p.email} (non-fatal):`, err);
     }
     await logEvent(p.id, "project_assigned", { assignmentId: id });
+    await createNotification({
+      participantId: p.id,
+      type: "project_assigned",
+      title: "New project assigned",
+      body: project.title,
+      linkUrl: `/onboarding/projects/${id}`,
+      assignmentId: id,
+    });
   }
 
   await db
