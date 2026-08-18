@@ -27,6 +27,12 @@ export function SidebarNav() {
   return (
     <>
       <aside className="hairline fixed inset-y-0 left-0 z-10 hidden w-56 flex-col bg-background/60 px-4 py-8 lg:flex">
+        <Link
+          href="/onboarding/dashboard"
+          className="mb-8 px-3.5 font-heading text-xs font-semibold tracking-[0.2em] text-foreground/50 transition-colors hover:text-foreground/80"
+        >
+          VANTAVERSE
+        </Link>
         <nav className="flex flex-1 flex-col gap-1">
           {NAV_ITEMS.map((item) => {
             const active = pathname === item.href || pathname.startsWith(`${item.href}/`);

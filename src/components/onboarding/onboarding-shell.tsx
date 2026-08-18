@@ -29,7 +29,9 @@ export function OnboardingShell({
       <header className={`relative z-10 mx-auto flex w-full ${contentWidth} items-center justify-between px-6 py-6`}>
         <Link
           href="/onboarding/dashboard"
-          className="font-heading text-xs font-semibold tracking-[0.2em] text-foreground/50 transition-colors hover:text-foreground/80"
+          className={`font-heading text-xs font-semibold tracking-[0.2em] text-foreground/50 transition-colors hover:text-foreground/80 ${
+            wide ? "lg:hidden" : ""
+          }`}
         >
           VANTAVERSE
         </Link>
