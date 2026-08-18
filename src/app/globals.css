@@ -141,6 +141,14 @@
   html {
     @apply font-sans;
   }
+  /* Browsers only give <a> a pointer cursor by default — <button> and
+     role="button" elements default to `cursor: default`. Every clickable
+     control in the app should read as clickable. */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  [role="tab"] {
+    cursor: pointer;
+  }
 }
 
 @layer utilities {

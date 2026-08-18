@@ -12,7 +12,7 @@ import { OnboardingShell } from "@/components/onboarding/onboarding-shell";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { useOnboardingState } from "@/hooks/use-onboarding-state";
+import { useOnboardingState, type OnboardingState } from "@/hooks/use-onboarding-state";
 import { nextRouteFor } from "@/lib/onboarding-routes";
 
 const schema = z.object({
@@ -61,7 +61,20 @@ export default function IdentityPage() {
         toast.error(message);
         return;
       }
-      router.push(data.emailVerified ? "/onboarding/github" : "/onboarding/verify");
+
+      if (!data.emailVerified) {
+        router.push("/onboarding/verify");
+        return;
+      }
+
+      // Returning, already-verified builder — resume wherever they
+      // actually left off (dashboard/report if done, next challenge if
+      // mid-flow) instead of always restarting at GitHub connect.
+      const meRes = await fetch("/api/onboarding/me", { cache: "no-store" });
+      const freshState: OnboardingState = meRes.ok
+        ? await meRes.json()
+        : { participant: null, completedChallengeKeys: [], nextChallengeKey: null, allChallengesComplete: false };
+      router.push(nextRouteFor(freshState));
     } catch {
       const message = "You're offline — check your connection and try again.";
       setServerError(message);

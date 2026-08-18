@@ -11,11 +11,14 @@ export function SiteNav() {
         </span>
       </div>
       <div className="flex items-center gap-3">
+        <span className="hidden text-xs font-medium tracking-wide text-foreground/40 sm:inline">
+          Founding Builders · Cohort 01
+        </span>
         <Link
           href="/onboarding"
           className="hairline rounded-full bg-card px-4 py-1.5 text-xs font-medium tracking-wide text-foreground/70 transition-colors hover:text-foreground"
         >
-          Founding Builders · Cohort 01
+          Sign in
         </Link>
         <ThemeToggle />
       </div>
