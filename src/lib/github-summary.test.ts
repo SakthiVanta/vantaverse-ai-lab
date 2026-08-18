@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { summarizeGithubActivity, type GithubRepoInput } from "./github-summary";
+import {
+  summarizeGithubActivity,
+  deriveContributionSignal,
+  countOwnedNonForkRepos,
+  type GithubRepoInput,
+} from "./github-summary";
 
 const NOW = new Date("2026-08-17T00:00:00Z");
 
@@ -7,7 +12,7 @@ function repo(overrides: Partial<GithubRepoInput>): GithubRepoInput {
   return {
     name: "repo",
     description: null,
-    language: null,
+    languages: [],
     stargazersCount: 0,
     forksCount: 0,
     topics: [],
@@ -16,6 +21,10 @@ function repo(overrides: Partial<GithubRepoInput>): GithubRepoInput {
     archived: false,
     ...overrides,
   };
+}
+
+function lang(name: string, bytes: number) {
+  return [{ name, bytes }];
 }
 
 describe("summarizeGithubActivity", () => {
@@ -29,23 +38,34 @@ describe("summarizeGithubActivity", () => {
 
   it("excludes forked and archived repos from the count", () => {
     const repos = [
-      repo({ name: "mine", language: "TypeScript" }),
-      repo({ name: "forked", fork: true, language: "TypeScript" }),
-      repo({ name: "old", archived: true, language: "TypeScript" }),
+      repo({ name: "mine", languages: lang("TypeScript", 1000) }),
+      repo({ name: "forked", fork: true, languages: lang("TypeScript", 1000) }),
+      repo({ name: "old", archived: true, languages: lang("TypeScript", 1000) }),
     ];
     const summary = summarizeGithubActivity(repos, NOW);
     expect(summary.repoCount).toBe(1);
   });
 
-  it("computes language breakdown as percentages across repos with a language", () => {
+  it("computes language breakdown as byte-weighted percentages across repos", () => {
     const repos = [
-      repo({ name: "a", language: "TypeScript" }),
-      repo({ name: "b", language: "TypeScript" }),
-      repo({ name: "c", language: "Python" }),
+      repo({ name: "a", languages: lang("TypeScript", 6000) }),
+      repo({ name: "b", languages: [{ name: "TypeScript", bytes: 4000 }] }),
+      repo({ name: "c", languages: lang("Python", 5000) }),
     ];
     const summary = summarizeGithubActivity(repos, NOW);
     expect(summary.languageBreakdown.TypeScript).toBe(67);
     expect(summary.languageBreakdown.Python).toBe(33);
+  });
+
+  it("weights a large repo's language more than a tiny repo's, unlike a repo-count average", () => {
+    const repos = [
+      // A 50-line script shouldn't count the same as a 50,000-line app.
+      repo({ name: "tiny-script", languages: lang("Shell", 50) }),
+      repo({ name: "big-app", languages: lang("TypeScript", 50000) }),
+    ];
+    const summary = summarizeGithubActivity(repos, NOW);
+    expect(summary.languageBreakdown.TypeScript).toBeGreaterThan(95);
+    expect(summary.languageBreakdown.Shell ?? 0).toBeLessThan(5);
   });
 
   it("detects AI theme from repo name/description/topics", () => {
@@ -91,5 +111,60 @@ describe("summarizeGithubActivity", () => {
     ];
     const summary = summarizeGithubActivity(repos, NOW);
     expect(summary.projectDiversity).toBe("High");
+  });
+});
+
+describe("countOwnedNonForkRepos", () => {
+  it("counts only non-fork, non-archived entries", () => {
+    const repos = [
+      { fork: false, archived: false },
+      { fork: true, archived: false },
+      { fork: false, archived: true },
+      { fork: false, archived: false },
+    ];
+    expect(countOwnedNonForkRepos(repos)).toBe(2);
+  });
+
+  it("returns 0 for non-array input (e.g. null from an unset jsonb column)", () => {
+    expect(countOwnedNonForkRepos(null)).toBe(0);
+    expect(countOwnedNonForkRepos(undefined)).toBe(0);
+  });
+});
+
+describe("deriveContributionSignal", () => {
+  it("reports Strong for high commit volume", () => {
+    expect(
+      deriveContributionSignal({
+        totalCommitContributions: 250,
+        totalRepositoriesWithContributedCommits: 1,
+      })
+    ).toBe("Strong");
+  });
+
+  it("reports Strong for contributions spread across many repos even with fewer commits", () => {
+    expect(
+      deriveContributionSignal({
+        totalCommitContributions: 20,
+        totalRepositoriesWithContributedCommits: 6,
+      })
+    ).toBe("Strong");
+  });
+
+  it("reports Moderate for modest activity", () => {
+    expect(
+      deriveContributionSignal({
+        totalCommitContributions: 40,
+        totalRepositoriesWithContributedCommits: 1,
+      })
+    ).toBe("Moderate");
+  });
+
+  it("reports Limited for little to no activity", () => {
+    expect(
+      deriveContributionSignal({
+        totalCommitContributions: 2,
+        totalRepositoriesWithContributedCommits: 1,
+      })
+    ).toBe("Limited");
   });
 });

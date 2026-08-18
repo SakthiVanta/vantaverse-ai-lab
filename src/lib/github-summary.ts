@@ -1,7 +1,10 @@
 export type GithubRepoInput = {
   name: string;
   description: string | null;
-  language: string | null;
+  /** Byte-weighted language breakdown for this repo, as reported by GitHub's
+   * linguist (largest first). Empty for repos GitHub couldn't detect a
+   * language for. */
+  languages: { name: string; bytes: number }[];
   stargazersCount: number;
   forksCount: number;
   topics: string[];
@@ -18,6 +21,17 @@ export type GithubSummary = {
   aiProjectEvidence: "Strong" | "Moderate" | "Limited";
   repoCount: number;
 };
+
+/** Owned, non-fork, non-archived repos — the set every signal in this
+ * module is computed from. Exported so read sites (the analysis prompt,
+ * the admin view) report the same "repos analyzed" count as the summary
+ * they're describing, rather than the raw unfiltered stored list. */
+export function countOwnedNonForkRepos(repos: unknown): number {
+  if (!Array.isArray(repos)) return 0;
+  return (repos as { fork?: boolean; archived?: boolean }[]).filter(
+    (r) => !r.fork && !r.archived
+  ).length;
+}
 
 const THEME_KEYWORDS: Record<string, string[]> = {
   AI: [
@@ -79,20 +93,20 @@ export function summarizeGithubActivity(
     };
   }
 
-  // Language breakdown by primary language across repos
-  const languageCounts = new Map<string, number>();
+  // Language breakdown weighted by actual bytes of code across repos —
+  // far more representative than counting "primary language per repo",
+  // which treats a 50-line script the same as a 50k-line application.
+  const languageBytes = new Map<string, number>();
   for (const repo of relevant) {
-    if (!repo.language) continue;
-    languageCounts.set(repo.language, (languageCounts.get(repo.language) ?? 0) + 1);
+    for (const { name, bytes } of repo.languages) {
+      languageBytes.set(name, (languageBytes.get(name) ?? 0) + bytes);
+    }
   }
-  const totalWithLanguage = Array.from(languageCounts.values()).reduce(
-    (a, b) => a + b,
-    0
-  );
+  const totalBytes = Array.from(languageBytes.values()).reduce((a, b) => a + b, 0);
   const languageBreakdown: Record<string, number> = {};
-  if (totalWithLanguage > 0) {
-    for (const [lang, count] of languageCounts) {
-      languageBreakdown[lang] = Math.round((count / totalWithLanguage) * 100);
+  if (totalBytes > 0) {
+    for (const [lang, bytes] of languageBytes) {
+      languageBreakdown[lang] = Math.round((bytes / totalBytes) * 100);
     }
   }
 
@@ -151,4 +165,25 @@ export function summarizeGithubActivity(
     aiProjectEvidence,
     repoCount: relevant.length,
   };
+}
+
+/**
+ * "Open-source contribution" signal (spec §12) — derived from GitHub's
+ * contribution-collection totals for roughly the last year, which counts
+ * commits across ALL public repos the account touched, not just ones it
+ * owns. This is the only place we capture evidence of contributing to
+ * other people's projects.
+ */
+export function deriveContributionSignal(input: {
+  totalCommitContributions: number;
+  totalRepositoriesWithContributedCommits: number;
+}): "Strong" | "Moderate" | "Limited" {
+  const { totalCommitContributions, totalRepositoriesWithContributedCommits } = input;
+  if (totalCommitContributions >= 200 || totalRepositoriesWithContributedCommits >= 5) {
+    return "Strong";
+  }
+  if (totalCommitContributions >= 30 || totalRepositoriesWithContributedCommits >= 2) {
+    return "Moderate";
+  }
+  return "Limited";
 }

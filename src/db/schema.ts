@@ -175,6 +175,11 @@ export const githubProfiles = pgTable("github_profiles", {
   projectThemes: jsonb("project_themes"), // ["AI", "Web Apps", ...]
   activitySignal: text("activity_signal"), // "High" | "Medium" | "Low"
   aiProjectEvidence: text("ai_project_evidence"), // "Strong" | "Moderate" | "Limited"
+  // Account-level (not per-repo) commit/contribution evidence, including
+  // contributions to repos the participant doesn't own.
+  commitContributionsLastYear: integer("commit_contributions_last_year"),
+  reposContributedToLastYear: integer("repos_contributed_to_last_year"),
+  openSourceContribution: text("open_source_contribution"), // "Strong" | "Moderate" | "Limited"
   fetchedAt: timestamp("fetched_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

@@ -15,6 +15,7 @@ import { ParticipantActions } from "@/components/admin/participant-actions";
 import { Badge } from "@/components/ui/badge";
 import { getSpiritById } from "@/lib/spirits";
 import { CHALLENGES } from "@/lib/challenges";
+import { countOwnedNonForkRepos } from "@/lib/github-summary";
 import { ArrowLeft } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -138,13 +139,31 @@ export default async function ParticipantDetailPage({
 
         {github && (
           <Section title="GitHub Building History">
-            <InfoRow label="Repos analyzed" value={String((github.repositories as unknown[])?.length ?? 0)} />
+            <InfoRow label="Repos analyzed" value={String(countOwnedNonForkRepos(github.repositories))} />
             <InfoRow label="Activity" value={github.activitySignal ?? "—"} />
             <InfoRow label="AI project evidence" value={github.aiProjectEvidence ?? "—"} />
             <InfoRow
               label="Themes"
               value={((github.projectThemes as string[]) ?? []).join(", ") || "—"}
             />
+            <InfoRow
+              label="Languages"
+              value={
+                Object.entries((github.languageBreakdown as Record<string, number>) ?? {})
+                  .sort((a, b) => b[1] - a[1])
+                  .map(([lang, pct]) => `${lang} ${pct}%`)
+                  .join(", ") || "—"
+              }
+            />
+            <InfoRow
+              label="Commit contributions (last ~year)"
+              value={String(github.commitContributionsLastYear ?? 0)}
+            />
+            <InfoRow
+              label="Repos contributed to (last ~year)"
+              value={String(github.reposContributedToLastYear ?? 0)}
+            />
+            <InfoRow label="Open-source contribution" value={github.openSourceContribution ?? "—"} />
           </Section>
         )}
 

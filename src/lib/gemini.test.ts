@@ -89,9 +89,13 @@ describe("buildAnalysisPrompt", () => {
         activitySignal: "High",
         aiProjectEvidence: "Strong",
         repoCount: 5,
+        commitContributionsLastYear: 240,
+        reposContributedToLastYear: 6,
+        openSourceContribution: "Strong",
       },
     });
     expect(prompt).toContain("sakthi-dev");
     expect(prompt).toContain("Strong");
+    expect(prompt).toContain("240");
   });
 });

@@ -4,7 +4,7 @@ import { participants, githubProfiles } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { verifySession } from "@/lib/session";
 import { exchangeGithubCode, fetchGithubProfileData } from "@/lib/github";
-import { summarizeGithubActivity } from "@/lib/github-summary";
+import { summarizeGithubActivity, deriveContributionSignal } from "@/lib/github-summary";
 import { logEvent } from "@/lib/events";
 
 export async function GET(req: NextRequest) {
@@ -26,6 +26,10 @@ export async function GET(req: NextRequest) {
     const accessToken = await exchangeGithubCode(code);
     const profile = await fetchGithubProfileData(accessToken);
     const summary = summarizeGithubActivity(profile.repos);
+    const openSourceContribution = deriveContributionSignal({
+      totalCommitContributions: profile.commitContributionsLastYear,
+      totalRepositoriesWithContributedCommits: profile.reposContributedToLastYear,
+    });
 
     const existing = await db.query.githubProfiles.findFirst({
       where: eq(githubProfiles.participantId, participantId),
@@ -46,6 +50,9 @@ export async function GET(req: NextRequest) {
       projectThemes: summary.projectThemes,
       activitySignal: summary.activitySignal,
       aiProjectEvidence: summary.aiProjectEvidence,
+      commitContributionsLastYear: profile.commitContributionsLastYear,
+      reposContributedToLastYear: profile.reposContributedToLastYear,
+      openSourceContribution,
       fetchedAt: new Date(),
     };
 

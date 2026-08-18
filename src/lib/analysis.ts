@@ -9,6 +9,7 @@ import {
 } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { runBuilderAnalysis, type AnalysisInput } from "@/lib/gemini";
+import { countOwnedNonForkRepos } from "@/lib/github-summary";
 
 export async function buildAnalysisInput(participantId: string): Promise<AnalysisInput> {
   const participant = await db.query.participants.findFirst({
@@ -45,7 +46,10 @@ export async function buildAnalysisInput(participantId: string): Promise<Analysi
           projectThemes: (github.projectThemes as string[]) ?? [],
           activitySignal: github.activitySignal ?? "Unknown",
           aiProjectEvidence: github.aiProjectEvidence ?? "Limited",
-          repoCount: (github.repositories as unknown[])?.length ?? 0,
+          repoCount: countOwnedNonForkRepos(github.repositories),
+          commitContributionsLastYear: github.commitContributionsLastYear ?? 0,
+          reposContributedToLastYear: github.reposContributedToLastYear ?? 0,
+          openSourceContribution: github.openSourceContribution ?? "Limited",
         }
       : null,
   };

@@ -44,6 +44,9 @@ export type AnalysisInput = {
     activitySignal: string;
     aiProjectEvidence: string;
     repoCount: number;
+    commitContributionsLastYear: number;
+    reposContributedToLastYear: number;
+    openSourceContribution: string;
   } | null;
 };
 
@@ -51,11 +54,14 @@ export function buildAnalysisPrompt(input: AnalysisInput): string {
   const githubBlock = input.github
     ? `GitHub evidence:
 - username: ${input.github.username}
-- public repositories analyzed: ${input.github.repoCount}
-- languages: ${JSON.stringify(input.github.languageBreakdown)}
+- public repositories analyzed: ${input.github.repoCount} (owned, non-fork)
+- languages (byte-weighted across all repos): ${JSON.stringify(input.github.languageBreakdown)}
 - project themes: ${input.github.projectThemes.join(", ") || "none detected"}
-- activity signal: ${input.github.activitySignal}
-- AI project evidence: ${input.github.aiProjectEvidence}`
+- activity signal (recency of pushes): ${input.github.activitySignal}
+- AI project evidence: ${input.github.aiProjectEvidence}
+- commit contributions in the last ~year (across ALL public repos, owned or not): ${input.github.commitContributionsLastYear}
+- distinct repos contributed to in the last ~year: ${input.github.reposContributedToLastYear}
+- open-source contribution signal: ${input.github.openSourceContribution}`
     : "GitHub evidence: not connected. Do not penalize the participant for this — simply note limited evidence where relevant.";
 
   return `You are the Builder Intelligence engine for Vantaverse AI Builder Lab.
