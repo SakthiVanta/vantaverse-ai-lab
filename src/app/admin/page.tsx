@@ -1,17 +1,8 @@
-import Link from "next/link";
 import { db } from "@/db";
 import { participants } from "@/db/schema";
 import { desc } from "drizzle-orm";
 import { AdminHeader } from "@/components/admin/admin-header";
-import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { ParticipantsTable } from "@/components/admin/participants-table";
 
 export const dynamic = "force-dynamic";
 
@@ -87,54 +78,13 @@ export default async function AdminDashboardPage() {
           <p className="text-xs font-medium uppercase tracking-[0.25em] text-foreground/40">
             Builders
           </p>
-          <div className="mt-4 overflow-hidden rounded-2xl border border-border">
-            <Table>
-              <TableHeader>
-                <TableRow className="hover:bg-transparent">
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>GitHub</TableHead>
-                  <TableHead>AI Key</TableHead>
-                  <TableHead>Joined</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {allParticipants.map((p) => (
-                  <TableRow key={p.id} className="cursor-pointer">
-                    <TableCell>
-                      <Link href={`/admin/participants/${p.id}`} className="font-medium hover:underline">
-                        {p.name}
-                      </Link>
-                    </TableCell>
-                    <TableCell className="text-foreground/60">{p.email}</TableCell>
-                    <TableCell>
-                      <Badge variant="secondary">{p.status.replaceAll("_", " ")}</Badge>
-                    </TableCell>
-                    <TableCell className="text-foreground/60">
-                      {p.githubConnected ? p.githubUsername : "—"}
-                    </TableCell>
-                    <TableCell>
-                      {p.aiApiKeyEncrypted ? (
-                        <Badge variant="secondary">own key</Badge>
-                      ) : (
-                        <span className="text-xs text-foreground/40">needs admin</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-foreground/40">
-                      {new Date(p.createdAt).toLocaleDateString()}
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {allParticipants.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={6} className="py-10 text-center text-foreground/40">
-                      No builders yet.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
+          <div className="mt-4">
+            <ParticipantsTable
+              participants={allParticipants.map((p) => ({
+                ...p,
+                joinedLabel: p.createdAt.toLocaleDateString("en-GB"),
+              }))}
+            />
           </div>
         </div>
       </main>
