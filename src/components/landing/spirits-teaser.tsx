@@ -33,7 +33,7 @@ export function SpiritsTeaser() {
             viewport={{ once: true, margin: "-10%" }}
             transition={{ duration: 0.5, delay: i * 0.04 }}
             whileHover={{ y: -6, scale: 1.08 }}
-            className="flex h-16 w-16 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.02] text-2xl sm:h-20 sm:w-20 sm:text-3xl"
+            className="hairline flex h-16 w-16 items-center justify-center rounded-2xl bg-card text-2xl sm:h-20 sm:w-20 sm:text-3xl"
           >
             {spirit.emoji}
           </motion.div>

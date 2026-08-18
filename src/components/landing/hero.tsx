@@ -31,9 +31,9 @@ export function Hero() {
     >
       <motion.div
         variants={item}
-        className="mb-8 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-4 py-1.5 text-xs font-medium text-foreground/60 backdrop-blur-sm"
+        className="hairline mb-8 inline-flex items-center gap-2 rounded-full bg-card px-4 py-1.5 text-xs font-medium text-foreground/60"
       >
-        <Sparkles className="h-3.5 w-3.5 text-vv-cyan" />
+        <Sparkles className="h-3.5 w-3.5 text-foreground/50" />
         AI Builder Lab · Phase 1
       </motion.div>
 
@@ -41,9 +41,9 @@ export function Hero() {
         variants={item}
         className="font-heading text-4xl font-semibold leading-[1.05] tracking-tight sm:text-6xl md:text-7xl"
       >
-        <span className="block text-foreground/50">DON&apos;T TELL US</span>
+        <span className="block text-foreground/40">DON&apos;T TELL US</span>
         <span className="block text-foreground">WHAT YOU CAN BUILD.</span>
-        <span className="text-gradient mt-2 block">SHOW US HOW YOU THINK.</span>
+        <span className="mt-2 block text-foreground">SHOW US HOW YOU THINK.</span>
       </motion.h1>
 
       <motion.p
@@ -57,7 +57,7 @@ export function Hero() {
       <motion.div variants={item} className="mt-10">
         <Link
           href="/onboarding"
-          className="group relative inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-vv-violet via-vv-magenta to-vv-cyan bg-[length:200%_100%] bg-[position:0%_0%] px-8 py-4 text-sm font-semibold tracking-wide text-white shadow-[0_0_40px_-8px_var(--vv-violet)] transition-[background-position,transform] duration-500 ease-out hover:bg-[position:100%_0%] hover:scale-[1.03] active:scale-[0.98]"
+          className="group inline-flex items-center gap-2 rounded-full bg-foreground px-8 py-4 text-sm font-semibold tracking-wide text-background transition-transform duration-300 hover:scale-[1.03] active:scale-[0.98]"
         >
           ENTER THE LAB
           <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />

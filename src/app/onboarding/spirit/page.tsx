@@ -37,7 +37,7 @@ export default function SpiritPage() {
         transition={{ duration: 0.5 }}
         className="text-center"
       >
-        <p className="text-xs font-medium uppercase tracking-[0.25em] text-vv-cyan">
+        <p className="text-xs font-medium uppercase tracking-[0.25em] text-muted-foreground">
           Choose Your Spirit
         </p>
         <h1 className="mt-3 font-heading text-3xl font-semibold sm:text-4xl">
@@ -53,10 +53,10 @@ export default function SpiritPage() {
               whileHover={{ y: -4, scale: 1.06 }}
               whileTap={{ scale: 0.95 }}
               disabled={!!selecting}
-              className="flex aspect-square items-center justify-center rounded-2xl border border-white/10 bg-white/[0.03] text-3xl transition-colors disabled:opacity-40"
+              className="flex aspect-square items-center justify-center rounded-2xl border border-border bg-card text-3xl transition-colors disabled:opacity-40"
               style={
                 selecting === spirit.id
-                  ? { boxShadow: "0 0 0 2px var(--vv-violet)" }
+                  ? { boxShadow: "0 0 0 2px var(--foreground)" }
                   : undefined
               }
             >

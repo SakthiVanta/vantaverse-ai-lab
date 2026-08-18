@@ -44,7 +44,7 @@ function GithubConnectContent() {
         transition={{ duration: 0.5 }}
         className="text-center"
       >
-        <p className="text-xs font-medium uppercase tracking-[0.25em] text-vv-cyan">
+        <p className="text-xs font-medium uppercase tracking-[0.25em] text-muted-foreground">
           Building History
         </p>
         <h1 className="mt-3 font-heading text-3xl font-semibold sm:text-4xl">

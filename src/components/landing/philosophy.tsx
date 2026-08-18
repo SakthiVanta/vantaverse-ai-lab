@@ -10,9 +10,9 @@ export function Philosophy() {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: "-15%" }}
         transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-        className="rounded-3xl border border-white/10 bg-white/[0.02] p-8 backdrop-blur-sm sm:p-12"
+        className="hairline rounded-3xl bg-card p-8 sm:p-12"
       >
-        <p className="text-xs font-medium uppercase tracking-[0.25em] text-vv-cyan">
+        <p className="text-xs font-medium uppercase tracking-[0.25em] text-muted-foreground">
           There are no right answers
         </p>
         <p className="mt-4 text-balance font-heading text-2xl font-medium leading-snug text-foreground/90 sm:text-3xl">

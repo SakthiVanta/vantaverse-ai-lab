@@ -42,7 +42,7 @@ export function TheLoop() {
             transition={{ duration: 0.5, delay: i * 0.07 }}
             className="flex items-center gap-2 sm:gap-3"
           >
-            <span className="rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-xs font-semibold tracking-wide text-foreground/70 sm:text-sm">
+            <span className="hairline rounded-full bg-card px-4 py-2 text-xs font-semibold tracking-wide text-foreground/70 sm:text-sm">
               {step}
             </span>
             {i < STEPS.length - 1 && (

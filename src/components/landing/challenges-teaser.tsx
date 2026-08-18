@@ -42,9 +42,8 @@ export function ChallengesTeaser() {
             viewport={{ once: true, margin: "-10%" }}
             transition={{ duration: 0.5, delay: (i % 4) * 0.06 }}
             whileHover={{ y: -3 }}
-            className="group relative flex aspect-[4/3] flex-col items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-white/[0.02] p-4 text-center"
+            className="hairline group relative flex aspect-[4/3] flex-col items-center justify-center overflow-hidden rounded-2xl bg-card p-4 text-center transition-colors duration-300 hover:bg-accent"
           >
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-vv-violet/0 via-vv-magenta/0 to-vv-cyan/0 opacity-0 transition-opacity duration-500 group-hover:from-vv-violet/15 group-hover:via-vv-magenta/10 group-hover:to-vv-cyan/15 group-hover:opacity-100" />
             <span className="relative z-10 font-heading text-sm font-semibold tracking-wide text-foreground/70 transition-colors group-hover:text-foreground sm:text-base">
               {name}
             </span>
@@ -55,7 +54,7 @@ export function ChallengesTeaser() {
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5, delay: 0.4 }}
-          className="flex aspect-[4/3] flex-col items-center justify-center rounded-2xl border border-dashed border-white/10 p-4 text-center"
+          className="flex aspect-[4/3] flex-col items-center justify-center rounded-2xl border border-dashed border-border p-4 text-center"
         >
           <span className="text-2xl">🎲</span>
           <span className="mt-2 text-xs text-foreground/40">

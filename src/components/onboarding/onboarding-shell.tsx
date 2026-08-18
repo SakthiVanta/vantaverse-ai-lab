@@ -1,4 +1,5 @@
-import { AuroraBackground } from "@/components/landing/aurora-background";
+import { SandBackground } from "@/components/landing/sand-background";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export function OnboardingShell({
   children,
@@ -9,21 +10,24 @@ export function OnboardingShell({
 }) {
   return (
     <div className="relative flex min-h-screen flex-col">
-      <AuroraBackground />
+      <SandBackground />
       <header className="relative z-10 mx-auto flex w-full max-w-xl items-center justify-between px-6 py-6">
         <span className="font-heading text-xs font-semibold tracking-[0.2em] text-foreground/50">
           VANTAVERSE
         </span>
-        {step && (
-          <span className="text-xs font-medium tracking-wide text-foreground/40">
-            {step.index.toString().padStart(2, "0")} / {step.total.toString().padStart(2, "0")}
-          </span>
-        )}
+        <div className="flex items-center gap-3">
+          {step && (
+            <span className="text-xs font-medium tracking-wide text-foreground/40">
+              {step.index.toString().padStart(2, "0")} / {step.total.toString().padStart(2, "0")}
+            </span>
+          )}
+          <ThemeToggle />
+        </div>
       </header>
       {step && (
-        <div className="relative z-10 mx-auto h-px w-full max-w-xl bg-white/10 px-6">
+        <div className="relative z-10 mx-auto h-[3px] w-full max-w-xl rounded-full bg-border px-6">
           <div
-            className="h-px bg-gradient-to-r from-vv-violet via-vv-magenta to-vv-cyan transition-all duration-500"
+            className="h-[3px] rounded-full bg-foreground transition-all duration-500"
             style={{ width: `${(step.index / step.total) * 100}%` }}
           />
         </div>

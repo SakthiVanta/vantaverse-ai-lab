@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "motion/react";
-import { AuroraBackground } from "@/components/landing/aurora-background";
+import { SandBackground } from "@/components/landing/sand-background";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useOnboardingState } from "@/hooks/use-onboarding-state";
@@ -82,7 +82,7 @@ function CompletePageContent() {
 
   return (
     <div className="relative flex min-h-screen flex-col">
-      <AuroraBackground />
+      <SandBackground />
       <main className="relative z-10 mx-auto flex w-full max-w-2xl flex-1 flex-col items-center px-6 py-16">
         {polling && !result && <FinalizingState />}
         {!polling && !result && <PendingState />}
@@ -101,7 +101,7 @@ function FinalizingState() {
       animate={{ opacity: 1 }}
       className="flex flex-1 flex-col items-center justify-center text-center"
     >
-      <div className="mb-6 h-10 w-10 animate-spin rounded-full border-2 border-white/10 border-t-vv-violet" />
+      <div className="mb-6 h-10 w-10 animate-spin rounded-full border-2 border-border border-t-foreground" />
       <p className="text-sm text-foreground/60">Finalizing your Builder Identity…</p>
     </motion.div>
   );
@@ -121,7 +121,7 @@ function PendingState() {
       </p>
       <Link
         href="/"
-        className="mt-8 rounded-full border border-white/10 bg-white/[0.03] px-6 py-3 text-xs font-medium tracking-wide text-foreground/70 hover:border-white/20"
+        className="mt-8 rounded-full border border-border bg-card px-6 py-3 text-xs font-medium tracking-wide text-foreground/70 hover:border-foreground/30"
       >
         Back to Vantaverse
       </Link>
@@ -142,10 +142,10 @@ function ResultView({ result, participantId }: { result: ResultData; participant
       className="w-full"
     >
       <div className="text-center">
-        <p className="text-xs font-medium uppercase tracking-[0.25em] text-vv-cyan">
+        <p className="text-xs font-medium uppercase tracking-[0.25em] text-muted-foreground">
           Your Builder Identity is ready
         </p>
-        <h1 className="text-gradient mt-3 font-heading text-3xl font-bold sm:text-4xl">
+        <h1 className="mt-3 font-heading text-3xl font-bold sm:text-4xl">
           {result.archetype?.primary}
         </h1>
         {result.archetype?.secondary && (
@@ -155,7 +155,7 @@ function ResultView({ result, participantId }: { result: ResultData; participant
         )}
       </div>
 
-      <div className="mx-auto mt-8 max-w-xs overflow-hidden rounded-2xl border border-white/10 glow-border">
+      <div className="hairline mx-auto mt-8 max-w-xs overflow-hidden rounded-2xl">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={result.cardImageUrl ?? `/api/builder-card/${participantId}`}
@@ -240,7 +240,7 @@ function ResultView({ result, participantId }: { result: ResultData; participant
       <div className="mt-14 flex justify-center">
         <Link
           href="/"
-          className="rounded-full bg-gradient-to-r from-vv-violet via-vv-magenta to-vv-cyan px-8 py-4 text-sm font-semibold text-white shadow-[0_0_40px_-8px_var(--vv-violet)]"
+          className="rounded-full bg-foreground px-8 py-4 text-sm font-semibold text-background transition-transform duration-300 hover:scale-[1.03]"
         >
           Enter Vantaverse Lab
         </Link>

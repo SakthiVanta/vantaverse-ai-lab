@@ -67,7 +67,7 @@ export default function IdentityPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <p className="text-xs font-medium uppercase tracking-[0.25em] text-vv-cyan">
+        <p className="text-xs font-medium uppercase tracking-[0.25em] text-muted-foreground">
           Builder Discovery
         </p>
         <h1 className="mt-3 font-heading text-3xl font-semibold sm:text-4xl">

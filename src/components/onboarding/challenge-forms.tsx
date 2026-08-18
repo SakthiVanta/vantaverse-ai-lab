@@ -22,10 +22,10 @@ function CardButton({
     <button
       type="button"
       onClick={onClick}
-      className={`w-full rounded-xl border px-5 py-4 text-left text-sm font-medium transition-all ${
+      className={`w-full rounded-2xl border-[1.5px] px-5 py-4 text-left text-sm font-medium transition-all duration-200 ${
         selected
-          ? "border-vv-violet/60 bg-vv-violet/10 text-foreground"
-          : "border-white/10 bg-white/[0.02] text-foreground/70 hover:border-white/20 hover:bg-white/[0.04]"
+          ? "border-foreground bg-accent text-foreground"
+          : "border-border bg-card text-foreground/70 hover:border-foreground/40 hover:bg-accent/60"
       }`}
     >
       {card.label}
@@ -100,10 +100,10 @@ export function RankAndReflectForm({
             <Reorder.Item
               key={card.id}
               value={card}
-              className={`flex items-center gap-3 rounded-xl border px-4 py-3 text-sm font-medium ${
+              className={`flex items-center gap-3 rounded-2xl border-[1.5px] px-4 py-3 text-sm font-medium ${
                 i < challenge.rankCount
-                  ? "border-vv-violet/50 bg-vv-violet/10 text-foreground"
-                  : "border-white/10 bg-white/[0.02] text-foreground/50"
+                  ? "border-foreground bg-accent text-foreground"
+                  : "border-border bg-card text-foreground/50"
               }`}
             >
               <GripVertical className="h-4 w-4 shrink-0 text-foreground/30" />
@@ -216,7 +216,7 @@ export function SequenceForm({
         {Array.from({ length: challenge.sequenceLength }).map((_, i) => (
           <div
             key={i}
-            className="flex h-12 items-center gap-3 rounded-xl border border-dashed border-white/15 px-4 text-sm text-foreground/40"
+            className="flex h-12 items-center gap-3 rounded-2xl border border-dashed border-border px-4 text-sm text-foreground/40"
           >
             <span className="text-xs">{i + 1}.</span>
             {picked[i] ? (
@@ -234,7 +234,7 @@ export function SequenceForm({
               key={card.id}
               type="button"
               onClick={() => pick(card)}
-              className="rounded-xl border border-white/10 bg-white/[0.02] px-3 py-2.5 text-left text-xs font-medium text-foreground/70 hover:border-white/20 hover:bg-white/[0.04]"
+              className="rounded-2xl border-[1.5px] border-border bg-card px-3 py-2.5 text-left text-xs font-medium text-foreground/70 transition-colors duration-200 hover:border-foreground/40 hover:bg-accent/60"
             >
               {card.label}
             </button>
@@ -307,7 +307,7 @@ export function TradeoffWithReasonForm({
               type="button"
               whileHover={{ y: -3 }}
               onClick={() => setChoice(card.id)}
-              className="flex flex-col items-start gap-1 rounded-xl border border-white/10 bg-white/[0.02] p-4 text-left hover:border-white/20 hover:bg-white/[0.04]"
+              className="flex flex-col items-start gap-1 rounded-2xl border-[1.5px] border-border bg-card p-4 text-left transition-colors duration-200 hover:border-foreground/40 hover:bg-accent/60"
             >
               <span className="text-sm font-bold tracking-wide text-foreground">{title}</span>
               <span className="text-xs text-foreground/50">{rest.join(" — ")}</span>

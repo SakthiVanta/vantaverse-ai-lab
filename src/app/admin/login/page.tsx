@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { SandBackground } from "@/components/landing/sand-background";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -33,9 +35,13 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-6">
+    <div className="relative flex min-h-screen items-center justify-center px-6">
+      <SandBackground />
+      <div className="absolute right-6 top-6">
+        <ThemeToggle />
+      </div>
       <div className="w-full max-w-sm">
-        <p className="text-center text-xs font-medium uppercase tracking-[0.25em] text-vv-cyan">
+        <p className="text-center text-xs font-medium uppercase tracking-[0.25em] text-muted-foreground">
           Vantaverse
         </p>
         <h1 className="mt-2 text-center font-heading text-2xl font-semibold">

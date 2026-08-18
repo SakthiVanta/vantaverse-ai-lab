@@ -42,7 +42,7 @@ export default async function AdminDashboardPage() {
     <div className="min-h-screen bg-background">
       <AdminHeader />
       <main className="mx-auto max-w-6xl px-6 py-10">
-        <p className="text-xs font-medium uppercase tracking-[0.25em] text-vv-cyan">
+        <p className="text-xs font-medium uppercase tracking-[0.25em] text-muted-foreground">
           Founding Builders
         </p>
         <div className="mt-3 flex flex-wrap gap-8">
@@ -80,7 +80,7 @@ export default async function AdminDashboardPage() {
           <p className="text-xs font-medium uppercase tracking-[0.25em] text-foreground/40">
             Builders
           </p>
-          <div className="mt-4 overflow-hidden rounded-2xl border border-white/10">
+          <div className="mt-4 overflow-hidden rounded-2xl border border-border">
             <Table>
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
@@ -138,7 +138,7 @@ function Stat({ label, value }: { label: string; value: number }) {
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-5">
+    <div className="rounded-2xl border border-border bg-card p-5">
       <p className="text-xs font-medium uppercase tracking-[0.2em] text-foreground/40">
         {title}
       </p>

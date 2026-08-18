@@ -61,7 +61,7 @@ export default function VerifyPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <p className="text-xs font-medium uppercase tracking-[0.25em] text-vv-cyan">
+        <p className="text-xs font-medium uppercase tracking-[0.25em] text-muted-foreground">
           Check your inbox
         </p>
         <h1 className="mt-3 font-heading text-3xl font-semibold sm:text-4xl">
@@ -81,7 +81,7 @@ export default function VerifyPage() {
             className="text-center text-2xl tracking-[0.5em]"
           />
           {error && <p className="text-xs text-destructive">{error}</p>}
-          {notice && <p className="text-xs text-vv-cyan">{notice}</p>}
+          {notice && <p className="text-xs text-muted-foreground">{notice}</p>}
 
           <Button
             onClick={onSubmit}

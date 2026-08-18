@@ -42,10 +42,9 @@ export async function GET(
           flexDirection: "column",
           justifyContent: "space-between",
           padding: "72px",
-          background:
-            "radial-gradient(circle at 20% 0%, #2a1a4a 0%, #0a0a12 55%), linear-gradient(160deg, #0a0a12 0%, #0d0a16 100%)",
+          background: "#1c1a17",
           fontFamily: "sans-serif",
-          color: "#f5f5fa",
+          color: "#f2ede5",
           position: "relative",
         }}
       >
@@ -56,7 +55,7 @@ export async function GET(
               fontSize: 28,
               fontWeight: 700,
               letterSpacing: 6,
-              color: "#f5f5fa",
+              color: "#f2ede5",
             }}
           >
             VANTAVERSE
@@ -66,7 +65,7 @@ export async function GET(
               display: "flex",
               fontSize: 18,
               letterSpacing: 4,
-              color: "#9a9ab8",
+              color: "#9c948a",
               marginTop: 6,
             }}
           >
@@ -92,10 +91,7 @@ export async function GET(
               fontWeight: 700,
               letterSpacing: 2,
               textTransform: "uppercase",
-              backgroundImage:
-                "linear-gradient(100deg, #a78bfa 0%, #f472b6 50%, #67e8f9 100%)",
-              backgroundClip: "text",
-              color: "transparent",
+              color: "#f2ede5",
             }}
           >
             {archetype}
@@ -106,7 +102,7 @@ export async function GET(
               fontSize: 34,
               fontWeight: 600,
               marginTop: 24,
-              color: "#f5f5fa",
+              color: "#f2ede5",
             }}
           >
             {participant.name.toUpperCase()}
@@ -117,7 +113,7 @@ export async function GET(
                 display: "flex",
                 fontSize: 18,
                 letterSpacing: 3,
-                color: "#9a9ab8",
+                color: "#9c948a",
                 marginTop: 18,
                 textTransform: "uppercase",
               }}
@@ -131,14 +127,14 @@ export async function GET(
           style={{
             display: "flex",
             flexDirection: "column",
-            borderTop: "1px solid rgba(255,255,255,0.12)",
+            borderTop: "1px solid rgba(242,237,229,0.14)",
             paddingTop: 28,
           }}
         >
-          <div style={{ display: "flex", fontSize: 20, fontWeight: 600, color: "#f5f5fa" }}>
+          <div style={{ display: "flex", fontSize: 20, fontWeight: 600, color: "#f2ede5" }}>
             COHORT 01
           </div>
-          <div style={{ display: "flex", fontSize: 16, color: "#9a9ab8", marginTop: 4 }}>
+          <div style={{ display: "flex", fontSize: 16, color: "#9c948a", marginTop: 4 }}>
             FOUNDING BUILDER
           </div>
         </div>

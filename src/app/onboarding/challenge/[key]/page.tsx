@@ -69,7 +69,7 @@ export default function ChallengePage() {
           exit={{ opacity: 0, y: -16 }}
           transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
         >
-          <p className="text-xs font-medium uppercase tracking-[0.25em] text-vv-cyan">
+          <p className="text-xs font-medium uppercase tracking-[0.25em] text-muted-foreground">
             {challenge.title}
           </p>
           <p className="mt-4 text-base leading-relaxed text-foreground/80 sm:text-lg">

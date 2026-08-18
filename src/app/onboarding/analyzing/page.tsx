@@ -51,9 +51,9 @@ export default function AnalyzingPage() {
         <motion.div
           animate={{ rotate: 360 }}
           transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-          className="mb-10 h-16 w-16 rounded-full border-2 border-white/10 border-t-vv-violet"
+          className="mb-10 h-16 w-16 rounded-full border-2 border-border border-t-foreground"
         />
-        <p className="text-xs font-medium uppercase tracking-[0.25em] text-vv-cyan">
+        <p className="text-xs font-medium uppercase tracking-[0.25em] text-muted-foreground">
           Your signals are being built
         </p>
         <div className="mt-6 h-6">

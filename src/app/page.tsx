@@ -1,4 +1,4 @@
-import { AuroraBackground } from "@/components/landing/aurora-background";
+import { SandBackground } from "@/components/landing/sand-background";
 import { SiteNav } from "@/components/landing/site-nav";
 import { Hero } from "@/components/landing/hero";
 import { Philosophy } from "@/components/landing/philosophy";
@@ -11,7 +11,7 @@ import { SiteFooter } from "@/components/landing/site-footer";
 export default function Home() {
   return (
     <div className="relative flex min-h-screen flex-col">
-      <AuroraBackground />
+      <SandBackground />
       <SiteNav />
       <Hero />
       <Philosophy />
