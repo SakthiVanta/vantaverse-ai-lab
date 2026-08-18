@@ -47,7 +47,9 @@ export async function buildAnalysisInput(participantId: string): Promise<Analysi
           projectThemes: (github.projectThemes as string[]) ?? [],
           activitySignal: github.activitySignal ?? "Unknown",
           aiProjectEvidence: github.aiProjectEvidence ?? "Limited",
-          repoCount: countOwnedNonForkRepos(github.repositories),
+          repoCount: github.selectedRepoNames
+            ? (github.selectedRepoNames as string[]).length
+            : countOwnedNonForkRepos(github.repositories),
           commitContributionsLastYear: github.commitContributionsLastYear ?? 0,
           reposContributedToLastYear: github.reposContributedToLastYear ?? 0,
           openSourceContribution: github.openSourceContribution ?? "Limited",

@@ -1,25 +1,47 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { motion } from "motion/react";
 import { toast } from "sonner";
-import { KeyRound, Loader2, ShieldCheck, Trash2 } from "lucide-react";
+import { KeyRound, Loader2, ShieldCheck, Trash2, GitFork, RefreshCw, ListChecks } from "lucide-react";
 import { OnboardingShell } from "@/components/onboarding/onboarding-shell";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { GithubHeatmap } from "@/components/onboarding/github-heatmap";
 import { useOnboardingState } from "@/hooks/use-onboarding-state";
 import { useAiKeyStatus } from "@/hooks/use-ai-key-status";
 import { getSpiritById } from "@/lib/spirits";
+import { GITHUB_ERROR_MESSAGES } from "@/lib/github-errors";
+import type { ContributionCalendar } from "@/lib/github";
+import type { GithubRepoInput } from "@/lib/github-summary";
+
+type GithubProfileData = {
+  username: string;
+  repositories: GithubRepoInput[];
+  selectedRepoNames: string[] | null;
+  contributionCalendar: ContributionCalendar;
+};
 
 export default function ProfilePage() {
+  return (
+    <Suspense fallback={null}>
+      <ProfilePageContent />
+    </Suspense>
+  );
+}
+
+function ProfilePageContent() {
   const router = useRouter();
+  const params = useSearchParams();
   const { state, loading } = useOnboardingState();
   const { status, loading: keyLoading, refresh } = useAiKeyStatus();
   const [apiKey, setApiKey] = useState("");
   const [saving, setSaving] = useState(false);
   const [removing, setRemoving] = useState(false);
+  const [github, setGithub] = useState<GithubProfileData | null>(null);
 
   useEffect(() => {
     if (loading) return;
@@ -27,7 +49,21 @@ export default function ProfilePage() {
     else if (!state.participant.emailVerified) router.replace("/onboarding/verify");
   }, [loading, state, router]);
 
+  useEffect(() => {
+    const error = params.get("error");
+    if (error) toast.error(GITHUB_ERROR_MESSAGES[error] ?? error);
+  }, [params]);
+
+  useEffect(() => {
+    if (!state?.participant?.githubConnected) return;
+    fetch("/api/onboarding/github/repos", { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then(setGithub)
+      .catch(() => setGithub(null));
+  }, [state?.participant?.githubConnected]);
+
   const spirit = state?.participant?.spiritId ? getSpiritById(state.participant.spiritId) : undefined;
+  const selectedCount = github?.selectedRepoNames?.length ?? github?.repositories.length ?? 0;
 
   const saveKey = async () => {
     if (!apiKey.trim()) return;
@@ -85,13 +121,73 @@ export default function ProfilePage() {
             <span className="text-xl">{spirit?.emoji ?? "👤"}</span>
             <span className="text-foreground/70">{state?.participant?.email}</span>
           </div>
-          <div className="mt-3 flex flex-wrap gap-2 text-xs text-foreground/50">
-            <span className="hairline rounded-full bg-background px-3 py-1">
-              {state?.participant?.githubConnected
-                ? `GitHub @${state.participant.githubUsername}`
-                : "GitHub not connected"}
-            </span>
+        </div>
+
+        <div className="mt-10">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <GitFork className="h-4 w-4 text-foreground/50" />
+              <p className="text-xs font-medium uppercase tracking-[0.25em] text-foreground/40">
+                GitHub
+              </p>
+            </div>
+            {state?.participant?.githubConnected && (
+              <div className="flex items-center gap-3">
+                <Link
+                  href="/onboarding/github/select-repos?returnTo=/onboarding/profile"
+                  className="flex items-center gap-1 text-xs font-medium text-foreground/50 hover:text-foreground"
+                >
+                  <ListChecks className="h-3 w-3" />
+                  Edit selected repos
+                </Link>
+                <Button
+                  render={<a href="/api/github/connect?returnTo=/onboarding/profile" />}
+                  variant="ghost"
+                  size="sm"
+                  className="gap-1.5"
+                >
+                  <RefreshCw className="h-3.5 w-3.5" />
+                  Reconnect
+                </Button>
+              </div>
+            )}
           </div>
+
+          {!state?.participant?.githubConnected ? (
+            <div className="mt-4 space-y-3">
+              <p className="text-sm text-foreground/60">
+                Connect GitHub so your Builder Analysis can use real evidence — languages,
+                activity, and the repos you choose to include.
+              </p>
+              <Button
+                render={<a href="/api/github/connect?returnTo=/onboarding/profile" />}
+                className="w-full gap-2"
+                size="lg"
+              >
+                <GitFork className="h-4 w-4" />
+                Connect GitHub now
+              </Button>
+            </div>
+          ) : (
+            <div className="mt-4 space-y-4">
+              <div className="hairline flex items-center justify-between rounded-2xl bg-card px-4 py-3.5">
+                <div className="flex items-center gap-2 text-sm text-foreground/80">
+                  <ShieldCheck className="h-4 w-4 text-foreground/50" />
+                  <span>@{state.participant.githubUsername}</span>
+                </div>
+                {github && (
+                  <span className="text-xs text-foreground/40">
+                    {selectedCount} of {github.repositories.length} repos selected
+                  </span>
+                )}
+              </div>
+              {github?.contributionCalendar ? (
+                <GithubHeatmap calendar={github.contributionCalendar} />
+              ) : (
+                <div className="h-32 animate-pulse rounded-2xl bg-card" />
+              )}
+            </div>
+          )}
         </div>
 
         <div className="mt-10">

@@ -16,11 +16,11 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(new URL("/onboarding/github?error=denied", appUrl));
   }
 
-  const payload = await verifySession<{ participantId: string }>(state);
+  const payload = await verifySession<{ participantId: string; returnTo?: string }>(state);
   if (!payload) {
     return NextResponse.redirect(new URL("/onboarding/github?error=invalid_state", appUrl));
   }
-  const { participantId } = payload;
+  const { participantId, returnTo = "/onboarding/spirit" } = payload;
 
   try {
     const accessToken = await exchangeGithubCode(code);
@@ -53,7 +53,11 @@ export async function GET(req: NextRequest) {
       commitContributionsLastYear: profile.commitContributionsLastYear,
       reposContributedToLastYear: profile.reposContributedToLastYear,
       openSourceContribution,
+      contributionCalendar: profile.contributionCalendar,
       fetchedAt: new Date(),
+      // selectedRepoNames intentionally omitted — a reconnect keeps
+      // whatever the builder previously curated; the picker page decides
+      // the default (non-fork/non-archived) only when it's still null.
     };
 
     if (existing) {
@@ -74,9 +78,11 @@ export async function GET(req: NextRequest) {
 
     await logEvent(participantId, "github_connected", { username: profile.login });
 
-    return NextResponse.redirect(new URL("/onboarding/spirit", appUrl));
+    const selectReposUrl = new URL("/onboarding/github/select-repos", appUrl);
+    selectReposUrl.searchParams.set("returnTo", returnTo);
+    return NextResponse.redirect(selectReposUrl);
   } catch (err) {
     console.error("GitHub connect failed:", err);
-    return NextResponse.redirect(new URL("/onboarding/github?error=failed", appUrl));
+    return NextResponse.redirect(new URL(`${returnTo}?error=failed`, appUrl));
   }
 }

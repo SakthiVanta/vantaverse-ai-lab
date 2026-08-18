@@ -51,6 +51,10 @@ export async function exchangeGithubCode(code: string): Promise<string> {
   return data.access_token;
 }
 
+export type ContributionCalendar = {
+  weeks: { contributionDays: { date: string; contributionCount: number }[] }[];
+};
+
 export type GithubProfileData = {
   login: string;
   name: string | null;
@@ -64,6 +68,9 @@ export type GithubProfileData = {
    * roughly the last year — GitHub's own "contributions" measure. */
   commitContributionsLastYear: number;
   reposContributedToLastYear: number;
+  /** Daily contribution counts for the last year — powers the activity
+   * heatmap. Account-wide, independent of which repos are selected. */
+  contributionCalendar: ContributionCalendar;
 };
 
 type GraphqlRepoNode = {
@@ -95,6 +102,7 @@ type GraphqlResponse = {
     contributionsCollection: {
       totalCommitContributions: number;
       totalRepositoriesWithContributedCommits: number;
+      contributionCalendar: ContributionCalendar;
     };
   };
 };
@@ -151,6 +159,14 @@ const REPOS_QUERY = /* GraphQL */ `
       contributionsCollection {
         totalCommitContributions
         totalRepositoriesWithContributedCommits
+        contributionCalendar {
+          weeks {
+            contributionDays {
+              date
+              contributionCount
+            }
+          }
+        }
       }
     }
   }
@@ -191,6 +207,7 @@ export async function fetchGithubProfileData(
     commitContributionsLastYear: first.contributionsCollection.totalCommitContributions,
     reposContributedToLastYear:
       first.contributionsCollection.totalRepositoriesWithContributedCommits,
+    contributionCalendar: first.contributionsCollection.contributionCalendar,
     repos: repoNodes.map((r) => ({
       name: r.name,
       description: r.description,

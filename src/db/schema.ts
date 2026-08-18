@@ -189,6 +189,12 @@ export const githubProfiles = pgTable("github_profiles", {
   commitContributionsLastYear: integer("commit_contributions_last_year"),
   reposContributedToLastYear: integer("repos_contributed_to_last_year"),
   openSourceContribution: text("open_source_contribution"), // "Strong" | "Moderate" | "Limited"
+  // string[] | null — null means "no selection made yet" (treat as "all
+  // repos", the pre-existing behavior) so old rows stay valid unmigrated.
+  selectedRepoNames: jsonb("selected_repo_names"),
+  // GitHub's own weeks/contributionDays shape, stored as fetched — powers
+  // the profile activity heatmap. Account-wide, not affected by repo selection.
+  contributionCalendar: jsonb("contribution_calendar"),
   fetchedAt: timestamp("fetched_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
