@@ -3,6 +3,8 @@ import { User } from "lucide-react";
 import { SandBackground } from "@/components/landing/sand-background";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { FloatingChat } from "@/components/onboarding/floating-chat";
+import { SidebarNav } from "@/components/onboarding/sidebar-nav";
+import { MobileTabBar } from "@/components/onboarding/mobile-tab-bar";
 
 export function OnboardingShell({
   children,
@@ -20,25 +22,31 @@ export function OnboardingShell({
   const contentWidth = wide ? "max-w-5xl" : "max-w-xl";
 
   return (
-    <div className="relative flex min-h-screen flex-col">
+    <div className={`relative flex min-h-screen flex-col ${wide ? "lg:pl-56" : ""}`}>
       <SandBackground />
+      {wide && <SidebarNav />}
       <header className={`relative z-10 mx-auto flex w-full ${contentWidth} items-center justify-between px-6 py-6`}>
-        <span className="font-heading text-xs font-semibold tracking-[0.2em] text-foreground/50">
+        <Link
+          href="/onboarding/dashboard"
+          className="font-heading text-xs font-semibold tracking-[0.2em] text-foreground/50 transition-colors hover:text-foreground/80"
+        >
           VANTAVERSE
-        </span>
+        </Link>
         <div className="flex items-center gap-3">
           {step && (
             <span className="text-xs font-medium tracking-wide text-foreground/40">
               {step.index.toString().padStart(2, "0")} / {step.total.toString().padStart(2, "0")}
             </span>
           )}
-          <Link
-            href="/onboarding/profile"
-            aria-label="Your profile"
-            className="hairline inline-flex h-8 w-8 items-center justify-center rounded-full bg-card text-foreground/70 transition-colors hover:text-foreground"
-          >
-            <User className="h-3.5 w-3.5" />
-          </Link>
+          {!wide && (
+            <Link
+              href="/onboarding/profile"
+              aria-label="Your profile"
+              className="hairline inline-flex h-8 w-8 items-center justify-center rounded-full bg-card text-foreground/70 transition-colors hover:text-foreground"
+            >
+              <User className="h-3.5 w-3.5" />
+            </Link>
+          )}
           <ThemeToggle />
         </div>
       </header>
@@ -56,10 +64,15 @@ export function OnboardingShell({
         centered-and-clipped above the fold — it collapses to top-aligned and
         scrolls normally instead.
       */}
-      <main className={`relative z-10 mx-auto flex w-full ${contentWidth} flex-1 flex-col px-6 py-12`}>
+      <main
+        className={`relative z-10 mx-auto flex w-full ${contentWidth} flex-1 flex-col px-6 pt-12 ${
+          wide ? "pb-28 lg:pb-12" : "pb-12"
+        }`}
+      >
         <div className="my-auto w-full">{children}</div>
       </main>
-      <FloatingChat />
+      {wide && <MobileTabBar />}
+      <FloatingChat wide={wide} />
     </div>
   );
 }

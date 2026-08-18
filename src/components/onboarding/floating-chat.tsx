@@ -11,7 +11,7 @@ import { QUICK_ANALYSES } from "@/lib/quick-analyses";
 
 type Message = { role: "user" | "model"; text: string };
 
-export function FloatingChat() {
+export function FloatingChat({ wide }: { wide?: boolean }) {
   const router = useRouter();
   const { state } = useOnboardingState();
   const { status, loading: keyLoading } = useAiKeyStatus();
@@ -107,7 +107,9 @@ export function FloatingChat() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 16, scale: 0.97 }}
             transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className="hairline fixed bottom-24 right-4 z-40 flex h-[28rem] w-[22rem] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl bg-card sm:right-6"
+            className={`hairline fixed right-4 z-40 flex h-[28rem] w-[22rem] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl bg-card sm:right-6 ${
+              wide ? "bottom-40 lg:bottom-24" : "bottom-24"
+            }`}
           >
             <div className="flex items-center justify-between border-b border-border px-4 py-3">
               <div className="flex items-center gap-2">
@@ -194,7 +196,9 @@ export function FloatingChat() {
         type="button"
         onClick={toggle}
         aria-label={locked ? "AI assistant locked" : "Open AI assistant"}
-        className="fixed bottom-6 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-foreground text-background shadow-lg transition-transform hover:scale-105 active:scale-95 sm:right-6"
+        className={`fixed right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-foreground text-background shadow-lg transition-transform hover:scale-105 active:scale-95 sm:right-6 ${
+          wide ? "bottom-24 lg:bottom-6" : "bottom-6"
+        }`}
       >
         {locked ? (
           <Lock className="h-5 w-5" />
