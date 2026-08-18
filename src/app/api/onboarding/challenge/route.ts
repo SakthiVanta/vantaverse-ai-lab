@@ -3,7 +3,7 @@ import { z } from "zod";
 import { db } from "@/db";
 import { challengeResponses, problems } from "@/db/schema";
 import { and, eq } from "drizzle-orm";
-import { getCurrentParticipantId } from "@/lib/auth";
+import { getVerifiedParticipantId } from "@/lib/auth";
 import { getChallenge, type ChallengeKey } from "@/lib/challenges";
 import { logEvent } from "@/lib/events";
 
@@ -14,7 +14,7 @@ const bodySchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
-  const participantId = await getCurrentParticipantId();
+  const participantId = await getVerifiedParticipantId();
   if (!participantId) {
     return NextResponse.json({ error: "Session expired" }, { status: 401 });
   }

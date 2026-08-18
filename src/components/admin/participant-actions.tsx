@@ -27,7 +27,11 @@ export function ParticipantActions({
         toast.error(data.error ?? "Analysis failed");
         return;
       }
-      toast.success("Analysis complete");
+      toast.success(
+        data.emailed
+          ? "Analysis complete — builder has been emailed their report"
+          : "Analysis complete, but the report email failed to send"
+      );
       router.refresh();
     } catch {
       toast.error("You're offline — check your connection and try again.");

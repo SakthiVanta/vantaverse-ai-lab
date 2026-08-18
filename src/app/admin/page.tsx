@@ -38,6 +38,9 @@ export default async function AdminDashboardPage() {
   ).length;
   const activeDevelopers = githubData.filter((g) => g.activitySignal === "High").length;
 
+  const ownKeyCount = allParticipants.filter((p) => p.aiApiKeyEncrypted).length;
+  const needsAdminCount = analyses.filter((a) => a.keySource === "admin_fallback").length;
+
   return (
     <div className="min-h-screen bg-background">
       <AdminHeader />
@@ -51,7 +54,7 @@ export default async function AdminDashboardPage() {
           <Stat label="In progress" value={inProgress} />
         </div>
 
-        <div className="mt-10 grid gap-6 sm:grid-cols-3">
+        <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           <Card title="Builder Intelligence">
             {Object.keys(archetypeCounts).length === 0 && (
               <EmptyLine>No analyses yet</EmptyLine>
@@ -74,6 +77,10 @@ export default async function AdminDashboardPage() {
               value={new Set(allProblems.map((p) => p.cluster).filter(Boolean)).size}
             />
           </Card>
+          <Card title="AI Access">
+            <Row label="Have their own key" value={ownKeyCount} />
+            <Row label="Analyzed via admin fallback" value={needsAdminCount} />
+          </Card>
         </div>
 
         <div className="mt-12">
@@ -88,6 +95,7 @@ export default async function AdminDashboardPage() {
                   <TableHead>Email</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>GitHub</TableHead>
+                  <TableHead>AI Key</TableHead>
                   <TableHead>Joined</TableHead>
                 </TableRow>
               </TableHeader>
@@ -106,6 +114,13 @@ export default async function AdminDashboardPage() {
                     <TableCell className="text-foreground/60">
                       {p.githubConnected ? p.githubUsername : "—"}
                     </TableCell>
+                    <TableCell>
+                      {p.aiApiKeyEncrypted ? (
+                        <Badge variant="secondary">own key</Badge>
+                      ) : (
+                        <span className="text-xs text-foreground/40">needs admin</span>
+                      )}
+                    </TableCell>
                     <TableCell className="text-foreground/40">
                       {new Date(p.createdAt).toLocaleDateString()}
                     </TableCell>
@@ -113,7 +128,7 @@ export default async function AdminDashboardPage() {
                 ))}
                 {allParticipants.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={5} className="py-10 text-center text-foreground/40">
+                    <TableCell colSpan={6} className="py-10 text-center text-foreground/40">
                       No builders yet.
                     </TableCell>
                   </TableRow>

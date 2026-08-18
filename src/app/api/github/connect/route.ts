@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { getCurrentParticipantId } from "@/lib/auth";
+import { getVerifiedParticipantId } from "@/lib/auth";
 import { signSession } from "@/lib/session";
 import { buildGithubAuthUrl } from "@/lib/github";
 
 export async function GET() {
-  const participantId = await getCurrentParticipantId();
+  const participantId = await getVerifiedParticipantId();
   if (!participantId) {
     return NextResponse.redirect(new URL("/onboarding", process.env.NEXT_PUBLIC_APP_URL));
   }

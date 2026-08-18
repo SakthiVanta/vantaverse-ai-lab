@@ -108,14 +108,21 @@ export function parseAnalysisResponse(raw: string): BuilderAnalysis {
   return analysisSchema.parse(json);
 }
 
+function resolveModelName(): string {
+  return process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
+}
+
+/**
+ * Runs the structured Builder Analysis. `apiKey` is always required and
+ * always caller-supplied — either the participant's own key or, for
+ * admin-triggered runs, the operator's env fallback key. There is no
+ * silent env fallback here: callers decide which key applies.
+ */
 export async function runBuilderAnalysis(
-  input: AnalysisInput
+  input: AnalysisInput,
+  apiKey: string
 ): Promise<{ analysis: BuilderAnalysis; model: string; raw: string }> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    throw new Error("GEMINI_API_KEY is not set in .env");
-  }
-  const modelName = process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
+  const modelName = resolveModelName();
 
   const genAI = new GoogleGenerativeAI(apiKey);
   const model = genAI.getGenerativeModel({
@@ -128,4 +135,51 @@ export async function runBuilderAnalysis(
   const text = result.response.text();
 
   return { analysis: parseAnalysisResponse(text), model: modelName, raw: text };
+}
+
+/** Throws a short, user-facing message if the key is missing/invalid —
+ * used both to validate a key the moment a builder saves it, and to give
+ * a clean error instead of a raw SDK exception at call time. */
+export async function validateGeminiKey(apiKey: string): Promise<void> {
+  if (!apiKey.trim()) {
+    throw new Error("Enter an API key first.");
+  }
+  try {
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: resolveModelName() });
+    await model.generateContent("Reply with the single word: ok");
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    if (/api key not valid|API_KEY_INVALID|PERMISSION_DENIED/i.test(message)) {
+      throw new Error("That key doesn't look valid — check it and try again.");
+    }
+    throw new Error("Couldn't reach Gemini with that key. Try again in a moment.");
+  }
+}
+
+export type ChatMessage = { role: "user" | "model"; text: string };
+
+const CHAT_SYSTEM_PROMPT = `You are the Vantaverse AI Builder Lab assistant. You help a Founding Builder think about their own building journey — their GitHub activity, their onboarding challenge answers, their project ideas, and what to build next. Be direct, specific, and encouraging without being generic. Keep replies conversational and concise (a few short paragraphs at most, or a tight list) unless the builder clearly asks for depth. If asked something with no connection to building, learning, or this program, gently redirect.`;
+
+/** Freeform chat + the "quick analysis" preset prompts both go through
+ * this — a single-turn-aware call using the builder's own key. */
+export async function askGemini(
+  apiKey: string,
+  message: string,
+  history: ChatMessage[] = [],
+  context?: string
+): Promise<string> {
+  const genAI = new GoogleGenerativeAI(apiKey);
+  const model = genAI.getGenerativeModel({
+    model: resolveModelName(),
+    systemInstruction: context
+      ? `${CHAT_SYSTEM_PROMPT}\n\nContext about this builder:\n${context}`
+      : CHAT_SYSTEM_PROMPT,
+  });
+
+  const chat = model.startChat({
+    history: history.map((m) => ({ role: m.role, parts: [{ text: m.text }] })),
+  });
+  const result = await chat.sendMessage(message);
+  return result.response.text();
 }

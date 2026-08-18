@@ -1,5 +1,8 @@
+import Link from "next/link";
+import { User } from "lucide-react";
 import { SandBackground } from "@/components/landing/sand-background";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { FloatingChat } from "@/components/onboarding/floating-chat";
 
 export function OnboardingShell({
   children,
@@ -21,6 +24,13 @@ export function OnboardingShell({
               {step.index.toString().padStart(2, "0")} / {step.total.toString().padStart(2, "0")}
             </span>
           )}
+          <Link
+            href="/onboarding/profile"
+            aria-label="Your profile"
+            className="hairline inline-flex h-8 w-8 items-center justify-center rounded-full bg-card text-foreground/70 transition-colors hover:text-foreground"
+          >
+            <User className="h-3.5 w-3.5" />
+          </Link>
           <ThemeToggle />
         </div>
       </header>
@@ -41,6 +51,7 @@ export function OnboardingShell({
       <main className="relative z-10 mx-auto flex w-full max-w-xl flex-1 flex-col px-6 py-12">
         <div className="my-auto w-full">{children}</div>
       </main>
+      <FloatingChat />
     </div>
   );
 }

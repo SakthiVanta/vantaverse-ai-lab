@@ -10,6 +10,7 @@ import {
 import { eq } from "drizzle-orm";
 import { runBuilderAnalysis, type AnalysisInput } from "@/lib/gemini";
 import { countOwnedNonForkRepos } from "@/lib/github-summary";
+import { resolveAnalysisKey } from "@/lib/ai-key";
 
 export async function buildAnalysisInput(participantId: string): Promise<AnalysisInput> {
   const participant = await db.query.participants.findFirst({
@@ -55,9 +56,15 @@ export async function buildAnalysisInput(participantId: string): Promise<Analysi
   };
 }
 
-export async function runAndSaveAnalysis(participantId: string) {
-  const input = await buildAnalysisInput(participantId);
-  const { analysis, model, raw } = await runBuilderAnalysis(input);
+export async function runAndSaveAnalysis(
+  participantId: string,
+  triggeredBy: "self" | "admin"
+) {
+  const [input, { apiKey, keySource }] = await Promise.all([
+    buildAnalysisInput(participantId),
+    resolveAnalysisKey(participantId, triggeredBy),
+  ]);
+  const { analysis, model, raw } = await runBuilderAnalysis(input, apiKey);
 
   const existing = await db.query.aiAnalyses.findFirst({
     where: eq(aiAnalyses.participantId, participantId),
@@ -75,6 +82,7 @@ export async function runAndSaveAnalysis(participantId: string) {
     confidence: analysis.confidence,
     rawResponse: JSON.parse(raw),
     model,
+    keySource,
   };
 
   if (existing) {

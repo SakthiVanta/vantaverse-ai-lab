@@ -1,6 +1,9 @@
 import { cookies } from "next/headers";
 import type { NextRequest } from "next/server";
 import bcrypt from "bcryptjs";
+import { eq } from "drizzle-orm";
+import { db } from "@/db";
+import { participants } from "@/db/schema";
 import { signSession, verifySession } from "./session";
 
 const PARTICIPANT_COOKIE = "vv_session";
@@ -33,6 +36,23 @@ export async function getCurrentParticipantId(): Promise<string | null> {
 export async function clearParticipantSession() {
   const store = await cookies();
   store.delete(PARTICIPANT_COOKIE);
+}
+
+/**
+ * Like getCurrentParticipantId, but also confirms the account's email is
+ * actually verified — the frontend gates navigation on this too, but that's
+ * only a UX nicety; routes that let a participant advance their onboarding
+ * (spirit, challenges, completion) need to enforce it server-side as well,
+ * or a session cookie obtained before verifying could be used to skip it.
+ */
+export async function getVerifiedParticipantId(): Promise<string | null> {
+  const participantId = await getCurrentParticipantId();
+  if (!participantId) return null;
+  const participant = await db.query.participants.findFirst({
+    where: eq(participants.id, participantId),
+    columns: { emailVerified: true },
+  });
+  return participant?.emailVerified ? participantId : null;
 }
 
 /**

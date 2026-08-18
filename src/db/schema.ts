@@ -30,6 +30,8 @@ export const confidenceEnum = pgEnum("confidence_level", [
   "high",
 ]);
 
+export const aiKeySourceEnum = pgEnum("ai_key_source", ["own", "admin_fallback"]);
+
 export const assignmentDifficultyEnum = pgEnum("assignment_difficulty", [
   "beginner",
   "intermediate",
@@ -60,6 +62,12 @@ export const participants = pgTable(
     githubUsername: text("github_username"),
     githubConnected: boolean("github_connected").notNull().default(false),
     githubConnectedAt: timestamp("github_connected_at", { withTimezone: true }),
+
+    // Builder's own AI key (encrypted) — unlocks self-service analysis and
+    // the chat assistant. Never returned to the client after being saved.
+    aiApiKeyEncrypted: text("ai_api_key_encrypted"),
+    aiApiKeyLast4: text("ai_api_key_last4"),
+    aiApiKeySetAt: timestamp("ai_api_key_set_at", { withTimezone: true }),
 
     cohort: text("cohort").notNull().default("Founding Builders — Cohort 01"),
     status: participantStatusEnum("status").notNull().default("invited"),
@@ -214,6 +222,7 @@ export const aiAnalyses = pgTable("ai_analyses", {
 
   rawResponse: jsonb("raw_response").notNull(), // full structured AI output
   model: text("model").notNull(),
+  keySource: aiKeySourceEnum("key_source").notNull(), // "own" | "admin_fallback"
 
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()

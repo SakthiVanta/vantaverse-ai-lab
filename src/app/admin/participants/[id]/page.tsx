@@ -81,6 +81,10 @@ export default async function ParticipantDetailPage({
         <Section title="Identity">
           <InfoRow label="Email" value={participant.email} />
           <InfoRow label="GitHub" value={participant.githubUsername ?? "Not connected"} />
+          <InfoRow
+            label="AI key"
+            value={participant.aiApiKeyEncrypted ? `Own key added (••••${participant.aiApiKeyLast4?.replace("••••", "") ?? ""})` : "Not added — needs admin fallback"}
+          />
           <InfoRow label="Joined" value={new Date(participant.createdAt).toLocaleString()} />
           <InfoRow
             label="Completed"
@@ -90,6 +94,10 @@ export default async function ParticipantDetailPage({
 
         {analysis && (
           <Section title="AI Analysis">
+            <InfoRow
+              label="Analyzed via"
+              value={analysis.keySource === "own" ? "Their own AI key" : "Admin fallback key"}
+            />
             <InfoRow label="Confidence" value={analysis.confidence} />
             <div className="mt-3 grid grid-cols-2 gap-x-8 gap-y-2 sm:grid-cols-3">
               {Object.entries(analysis.signals as Record<string, number>).map(([k, v]) => (
