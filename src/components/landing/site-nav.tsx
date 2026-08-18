@@ -15,7 +15,7 @@ export function SiteNav() {
           Founding Builders · Cohort 01
         </span>
         <Link
-          href="/onboarding"
+          href="/onboarding/signin"
           className="hairline rounded-full bg-card px-4 py-1.5 text-xs font-medium tracking-wide text-foreground/70 transition-colors hover:text-foreground"
         >
           Sign in
