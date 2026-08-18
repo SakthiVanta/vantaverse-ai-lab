@@ -36,6 +36,7 @@ export async function GET(req: NextRequest) {
     githubSummary: analysis.githubSummary,
     evidence: analysis.evidence,
     confidence: analysis.confidence,
+    generatedAt: analysis.createdAt.toISOString(),
     cardImageUrl: card?.imageUrl ?? null,
     problem: problem
       ? { description: problem.description, who: problem.whoExperiencesIt, why: problem.whyItMatters }

@@ -1,4 +1,7 @@
 import { NextResponse } from "next/server";
+import { db } from "@/db";
+import { aiAnalyses } from "@/db/schema";
+import { eq } from "drizzle-orm";
 import { getVerifiedParticipantId } from "@/lib/auth";
 import { getParticipantOnboardingState } from "@/lib/participant-state";
 import { runAndSaveAnalysis } from "@/lib/analysis";
@@ -19,6 +22,16 @@ export async function POST() {
     return NextResponse.json({ error: "Finish onboarding first" }, { status: 400 });
   }
 
+  const existing = await db.query.aiAnalyses.findFirst({
+    where: eq(aiAnalyses.participantId, participantId),
+  });
+  if (existing) {
+    return NextResponse.json(
+      { error: "Delete your current report before generating a new one" },
+      { status: 409 }
+    );
+  }
+
   try {
     await runAndSaveAnalysis(participantId, "self");
     try {
@@ -37,4 +50,16 @@ export async function POST() {
       { status: 500 }
     );
   }
+}
+
+/** Deletes the builder's current report — required before they can
+ * regenerate a new one (see the 409 check in POST above). */
+export async function DELETE() {
+  const participantId = await getVerifiedParticipantId();
+  if (!participantId) {
+    return NextResponse.json({ error: "Session expired" }, { status: 401 });
+  }
+
+  await db.delete(aiAnalyses).where(eq(aiAnalyses.participantId, participantId));
+  return NextResponse.json({ ok: true });
 }

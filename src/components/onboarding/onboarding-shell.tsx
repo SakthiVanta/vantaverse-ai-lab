@@ -7,14 +7,22 @@ import { FloatingChat } from "@/components/onboarding/floating-chat";
 export function OnboardingShell({
   children,
   step,
+  wide,
 }: {
   children: React.ReactNode;
   step?: { label: string; index: number; total: number };
+  /** Wizard steps (identity, spirit, challenges…) stay narrow and centered
+   * on purpose. Content-heavy screens (dashboard, a project's chat/research
+   * workspace) opt into this instead so desktop users aren't stuck with a
+   * phone-width column. */
+  wide?: boolean;
 }) {
+  const contentWidth = wide ? "max-w-5xl" : "max-w-xl";
+
   return (
     <div className="relative flex min-h-screen flex-col">
       <SandBackground />
-      <header className="relative z-10 mx-auto flex w-full max-w-xl items-center justify-between px-6 py-6">
+      <header className={`relative z-10 mx-auto flex w-full ${contentWidth} items-center justify-between px-6 py-6`}>
         <span className="font-heading text-xs font-semibold tracking-[0.2em] text-foreground/50">
           VANTAVERSE
         </span>
@@ -35,7 +43,7 @@ export function OnboardingShell({
         </div>
       </header>
       {step && (
-        <div className="relative z-10 mx-auto h-[3px] w-full max-w-xl rounded-full bg-border px-6">
+        <div className={`relative z-10 mx-auto h-[3px] w-full ${contentWidth} rounded-full bg-border px-6`}>
           <div
             className="h-[3px] rounded-full bg-foreground transition-all duration-500"
             style={{ width: `${(step.index / step.total) * 100}%` }}
@@ -48,7 +56,7 @@ export function OnboardingShell({
         centered-and-clipped above the fold — it collapses to top-aligned and
         scrolls normally instead.
       */}
-      <main className="relative z-10 mx-auto flex w-full max-w-xl flex-1 flex-col px-6 py-12">
+      <main className={`relative z-10 mx-auto flex w-full ${contentWidth} flex-1 flex-col px-6 py-12`}>
         <div className="my-auto w-full">{children}</div>
       </main>
       <FloatingChat />

@@ -24,7 +24,7 @@ export default function ParticipantProjectPage({
   }, [loading, state, router]);
 
   return (
-    <OnboardingShell>
+    <OnboardingShell wide>
       <Link
         href="/onboarding/dashboard"
         className="mb-6 flex items-center gap-1 text-xs text-foreground/40 hover:text-foreground/70"

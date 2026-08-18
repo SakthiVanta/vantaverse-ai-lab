@@ -164,6 +164,22 @@
   .hairline {
     box-shadow: 0 0 0 1px var(--sand-line);
   }
+
+  /* A quiet pulsing ring (no gradient) to make the self-service AI
+     analyze button read as the "special" action on the dashboard. */
+  .analyze-glow {
+    animation: analyze-pulse 2.4s ease-in-out infinite;
+  }
+}
+
+@keyframes analyze-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in oklch, var(--foreground) 22%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 6px color-mix(in oklch, var(--foreground) 0%, transparent);
+  }
 }
 
 /* Shared by the Tiptap editor and the read-only article view, so
