@@ -161,6 +161,21 @@
     mix-blend-mode: var(--sand-grain-blend);
   }
 
+  /* Same grain, brighter, revealed only in a soft radius around the
+     cursor via a grayscale mask — a monochrome spotlight, not a color
+     gradient, so it stays consistent with the no-gradient palette. */
+  .sand-grain-spotlight {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+    opacity: calc(var(--sand-grain-opacity) * 3.5);
+    mix-blend-mode: var(--sand-grain-blend);
+    --spot-x: 50vw;
+    --spot-y: 50vh;
+    mask-image: radial-gradient(320px circle at var(--spot-x) var(--spot-y), black, transparent 70%);
+    -webkit-mask-image: radial-gradient(320px circle at var(--spot-x) var(--spot-y), black, transparent 70%);
+    transition: opacity 0.3s ease;
+  }
+
   .hairline {
     box-shadow: 0 0 0 1px var(--sand-line);
   }
