@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
+import { toast } from "sonner";
 import { OnboardingShell } from "@/components/onboarding/onboarding-shell";
 import { useOnboardingState } from "@/hooks/use-onboarding-state";
 import { CHALLENGES, getChallenge, TOTAL_CHALLENGES, type ChallengeKey } from "@/lib/challenges";
@@ -41,11 +42,24 @@ export default function ChallengePage() {
   const handleSubmit = async (response: unknown, reasoning?: string) => {
     if (submitting) return;
     setSubmitting(true);
-    await fetch("/api/onboarding/challenge", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ challengeKey: challenge.key, response, reasoning }),
-    });
+    try {
+      const res = await fetch("/api/onboarding/challenge", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ challengeKey: challenge.key, response, reasoning }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        toast.error(data.error ?? "Couldn't save your answer — try again.");
+        setSubmitting(false);
+        return;
+      }
+    } catch {
+      toast.error("You're offline — check your connection and try again.");
+      setSubmitting(false);
+      return;
+    }
+
     const currentIndex = CHALLENGES.findIndex((c) => c.key === challenge.key);
     const next = CHALLENGES[currentIndex + 1];
     if (next) {
@@ -82,7 +96,11 @@ export default function ChallengePage() {
           )}
 
           <div className="mt-8">
-            <ChallengeBody challenge={challenge} onSubmit={handleSubmit} disabled={submitting} />
+            <ChallengeBody
+              challenge={challenge}
+              onSubmit={handleSubmit}
+              submitting={submitting}
+            />
           </div>
         </motion.div>
       </AnimatePresence>
@@ -93,34 +111,34 @@ export default function ChallengePage() {
 function ChallengeBody({
   challenge,
   onSubmit,
-  disabled,
+  submitting,
 }: {
   challenge: NonNullable<ReturnType<typeof getChallenge>>;
   onSubmit: (response: unknown, reasoning?: string) => void;
-  disabled: boolean;
+  submitting: boolean;
 }) {
   const wrapped = (response: unknown, reasoning?: string) => {
-    if (disabled) return;
+    if (submitting) return;
     onSubmit(response, reasoning);
   };
 
   switch (challenge.type) {
     case "choice-with-reason":
-      return <ChoiceWithReasonForm challenge={challenge} onSubmit={wrapped} />;
+      return <ChoiceWithReasonForm challenge={challenge} onSubmit={wrapped} submitting={submitting} />;
     case "rank-and-reflect":
-      return <RankAndReflectForm challenge={challenge} onSubmit={wrapped} />;
+      return <RankAndReflectForm challenge={challenge} onSubmit={wrapped} submitting={submitting} />;
     case "choice-with-sentence":
-      return <ChoiceWithSentenceForm challenge={challenge} onSubmit={wrapped} />;
+      return <ChoiceWithSentenceForm challenge={challenge} onSubmit={wrapped} submitting={submitting} />;
     case "sequence":
-      return <SequenceForm challenge={challenge} onSubmit={wrapped} />;
+      return <SequenceForm challenge={challenge} onSubmit={wrapped} submitting={submitting} />;
     case "freeform":
-      return <FreeformForm challenge={challenge} onSubmit={wrapped} />;
+      return <FreeformForm challenge={challenge} onSubmit={wrapped} submitting={submitting} />;
     case "tradeoff-with-reason":
-      return <TradeoffWithReasonForm challenge={challenge} onSubmit={wrapped} />;
+      return <TradeoffWithReasonForm challenge={challenge} onSubmit={wrapped} submitting={submitting} />;
     case "problem-form":
-      return <ProblemForm challenge={challenge} onSubmit={wrapped} />;
+      return <ProblemForm challenge={challenge} onSubmit={wrapped} submitting={submitting} />;
     case "sentence-complete":
-      return <SentenceCompleteForm challenge={challenge} onSubmit={wrapped} />;
+      return <SentenceCompleteForm challenge={challenge} onSubmit={wrapped} submitting={submitting} />;
     default:
       return null;
   }

@@ -1,17 +1,27 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 export function AdminHeader() {
   const router = useRouter();
+  const [signingOut, setSigningOut] = useState(false);
 
   const logout = async () => {
-    await fetch("/api/admin/logout", { method: "POST" });
-    router.push("/admin/login");
-    router.refresh();
+    setSigningOut(true);
+    try {
+      await fetch("/api/admin/logout", { method: "POST" });
+      router.push("/admin/login");
+      router.refresh();
+    } catch {
+      toast.error("Couldn't sign out — check your connection and try again.");
+      setSigningOut(false);
+    }
   };
 
   return (
@@ -22,8 +32,9 @@ export function AdminHeader() {
         </Link>
         <div className="flex items-center gap-3">
           <ThemeToggle />
-          <Button variant="ghost" size="sm" onClick={logout}>
-            Sign out
+          <Button variant="ghost" size="sm" className="gap-1.5" disabled={signingOut} onClick={logout}>
+            {signingOut && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+            {signingOut ? "Signing out…" : "Sign out"}
           </Button>
         </div>
       </div>

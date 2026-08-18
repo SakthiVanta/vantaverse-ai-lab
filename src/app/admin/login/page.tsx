@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -19,19 +21,28 @@ export default function AdminLoginPage() {
     e.preventDefault();
     setSubmitting(true);
     setError(null);
-    const res = await fetch("/api/admin/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
-    setSubmitting(false);
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      setError(data.error ?? "Login failed");
-      return;
+    try {
+      const res = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        const message = data.error ?? "Login failed";
+        setError(message);
+        toast.error(message);
+        return;
+      }
+      router.push("/admin");
+      router.refresh();
+    } catch {
+      const message = "You're offline — check your connection and try again.";
+      setError(message);
+      toast.error(message);
+    } finally {
+      setSubmitting(false);
     }
-    router.push("/admin");
-    router.refresh();
   };
 
   return (
@@ -71,7 +82,8 @@ export default function AdminLoginPage() {
             />
           </div>
           {error && <p className="text-xs text-destructive">{error}</p>}
-          <Button type="submit" className="w-full" size="lg" disabled={submitting}>
+          <Button type="submit" className="w-full gap-2" size="lg" disabled={submitting}>
+            {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
             {submitting ? "Signing in…" : "Sign in"}
           </Button>
         </form>

@@ -32,8 +32,14 @@ export function OnboardingShell({
           />
         </div>
       )}
-      <main className="relative z-10 mx-auto flex w-full max-w-xl flex-1 flex-col justify-center px-6 py-12">
-        {children}
+      {/*
+        `my-auto` (not `justify-center` on the flex parent) so short screens
+        still look centered, but content taller than the viewport never gets
+        centered-and-clipped above the fold — it collapses to top-aligned and
+        scrolls normally instead.
+      */}
+      <main className="relative z-10 mx-auto flex w-full max-w-xl flex-1 flex-col px-6 py-12">
+        <div className="my-auto w-full">{children}</div>
       </main>
     </div>
   );

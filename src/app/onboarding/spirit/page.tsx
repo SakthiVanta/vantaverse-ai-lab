@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
+import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 import { OnboardingShell } from "@/components/onboarding/onboarding-shell";
 import { SPIRITS } from "@/lib/spirits";
 import { useOnboardingState } from "@/hooks/use-onboarding-state";
@@ -21,11 +23,23 @@ export default function SpiritPage() {
   const choose = async (spiritId: string) => {
     if (selecting) return;
     setSelecting(spiritId);
-    await fetch("/api/onboarding/spirit", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ spiritId }),
-    });
+    try {
+      const res = await fetch("/api/onboarding/spirit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ spiritId }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        toast.error(data.error ?? "Couldn't save your spirit — try again.");
+        setSelecting(null);
+        return;
+      }
+    } catch {
+      toast.error("You're offline — check your connection and try again.");
+      setSelecting(null);
+      return;
+    }
     router.push("/onboarding/challenge/the_unknown");
   };
 
@@ -53,14 +67,18 @@ export default function SpiritPage() {
               whileHover={{ y: -4, scale: 1.06 }}
               whileTap={{ scale: 0.95 }}
               disabled={!!selecting}
-              className="flex aspect-square items-center justify-center rounded-2xl border border-border bg-card text-3xl transition-colors disabled:opacity-40"
+              className="relative flex aspect-square items-center justify-center rounded-2xl border border-border bg-card text-3xl transition-colors disabled:opacity-40"
               style={
                 selecting === spirit.id
-                  ? { boxShadow: "0 0 0 2px var(--foreground)" }
+                  ? { boxShadow: "0 0 0 2px var(--foreground)", opacity: 1 }
                   : undefined
               }
             >
-              {spirit.emoji}
+              {selecting === spirit.id ? (
+                <Loader2 className="h-6 w-6 animate-spin" />
+              ) : (
+                spirit.emoji
+              )}
             </motion.button>
           ))}
         </div>

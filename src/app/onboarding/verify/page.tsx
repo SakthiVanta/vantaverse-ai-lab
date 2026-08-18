@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
+import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 import { OnboardingShell } from "@/components/onboarding/onboarding-shell";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -15,7 +17,6 @@ export default function VerifyPage() {
   const [submitting, setSubmitting] = useState(false);
   const [resending, setResending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
     if (loading) return;
@@ -26,32 +27,49 @@ export default function VerifyPage() {
   const onSubmit = async () => {
     setSubmitting(true);
     setError(null);
-    const res = await fetch("/api/onboarding/verify-otp", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ code }),
-    });
-    const data = await res.json();
-    setSubmitting(false);
-    if (!res.ok) {
-      setError(data.error ?? "Something went wrong");
-      return;
+    try {
+      const res = await fetch("/api/onboarding/verify-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const message = data.error ?? "Something went wrong";
+        setError(message);
+        toast.error(message);
+        return;
+      }
+      router.push("/onboarding/github");
+    } catch {
+      const message = "You're offline — check your connection and try again.";
+      setError(message);
+      toast.error(message);
+    } finally {
+      setSubmitting(false);
     }
-    router.push("/onboarding/github");
   };
 
   const onResend = async () => {
     setResending(true);
     setError(null);
-    setNotice(null);
-    const res = await fetch("/api/onboarding/resend-otp", { method: "POST" });
-    const data = await res.json();
-    setResending(false);
-    if (!res.ok) {
-      setError(data.error ?? "Could not resend code");
-      return;
+    try {
+      const res = await fetch("/api/onboarding/resend-otp", { method: "POST" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const message = data.error ?? "Could not resend code";
+        setError(message);
+        toast.error(message);
+        return;
+      }
+      toast.success("A new code is on its way.");
+    } catch {
+      const message = "You're offline — check your connection and try again.";
+      setError(message);
+      toast.error(message);
+    } finally {
+      setResending(false);
     }
-    setNotice("A new code is on its way.");
   };
 
   return (
@@ -78,17 +96,18 @@ export default function VerifyPage() {
             placeholder="••••••"
             value={code}
             onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
+            disabled={submitting}
             className="text-center text-2xl tracking-[0.5em]"
           />
           {error && <p className="text-xs text-destructive">{error}</p>}
-          {notice && <p className="text-xs text-muted-foreground">{notice}</p>}
 
           <Button
             onClick={onSubmit}
             disabled={submitting || code.length !== 6}
-            className="w-full"
+            className="w-full gap-2"
             size="lg"
           >
+            {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
             {submitting ? "Verifying…" : "Verify & continue"}
           </Button>
 
@@ -96,8 +115,9 @@ export default function VerifyPage() {
             type="button"
             onClick={onResend}
             disabled={resending}
-            className="mx-auto block text-xs text-foreground/40 underline-offset-4 hover:text-foreground/70 hover:underline"
+            className="mx-auto flex items-center gap-1.5 text-xs text-foreground/40 underline-offset-4 hover:text-foreground/70 hover:underline disabled:no-underline"
           >
+            {resending && <Loader2 className="h-3 w-3 animate-spin" />}
             {resending ? "Sending…" : "Didn't get it? Resend code"}
           </button>
         </div>

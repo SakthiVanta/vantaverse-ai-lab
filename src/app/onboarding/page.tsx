@@ -6,6 +6,8 @@ import { motion } from "motion/react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 import { OnboardingShell } from "@/components/onboarding/onboarding-shell";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -46,18 +48,27 @@ export default function IdentityPage() {
   const onSubmit = async (values: FormValues) => {
     setSubmitting(true);
     setServerError(null);
-    const res = await fetch("/api/onboarding/start", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(values),
-    });
-    const data = await res.json();
-    setSubmitting(false);
-    if (!res.ok) {
-      setServerError(data.error ?? "Something went wrong");
-      return;
+    try {
+      const res = await fetch("/api/onboarding/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(values),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const message = data.error ?? "Something went wrong";
+        setServerError(message);
+        toast.error(message);
+        return;
+      }
+      router.push(data.emailVerified ? "/onboarding/github" : "/onboarding/verify");
+    } catch {
+      const message = "You're offline — check your connection and try again.";
+      setServerError(message);
+      toast.error(message);
+    } finally {
+      setSubmitting(false);
     }
-    router.push(data.emailVerified ? "/onboarding/github" : "/onboarding/verify");
   };
 
   return (
@@ -106,7 +117,8 @@ export default function IdentityPage() {
 
           {serverError && <p className="text-xs text-destructive">{serverError}</p>}
 
-          <Button type="submit" disabled={submitting} className="w-full" size="lg">
+          <Button type="submit" disabled={submitting} className="w-full gap-2" size="lg">
+            {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
             {submitting ? "Sending code…" : "Continue"}
           </Button>
         </form>

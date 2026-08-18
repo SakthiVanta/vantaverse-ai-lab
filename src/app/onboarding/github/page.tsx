@@ -1,9 +1,10 @@
 "use client";
 
-import { Suspense, useEffect } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "motion/react";
-import { GitFork, ArrowRight } from "lucide-react";
+import { toast } from "sonner";
+import { GitFork, ArrowRight, Loader2 } from "lucide-react";
 import { OnboardingShell } from "@/components/onboarding/onboarding-shell";
 import { Button } from "@/components/ui/button";
 import { useOnboardingState } from "@/hooks/use-onboarding-state";
@@ -28,6 +29,8 @@ function GithubConnectContent() {
   const params = useSearchParams();
   const { state, loading } = useOnboardingState();
   const error = params.get("error");
+  const [connecting, setConnecting] = useState(false);
+  const [skipping, setSkipping] = useState(false);
 
   useEffect(() => {
     if (loading) return;
@@ -35,6 +38,16 @@ function GithubConnectContent() {
     else if (!state.participant.emailVerified) router.replace("/onboarding/verify");
     else if (state.participant.githubConnected) router.replace("/onboarding/spirit");
   }, [loading, state, router]);
+
+  useEffect(() => {
+    if (error) toast.error(ERROR_MESSAGES[error] ?? error);
+  }, [error]);
+
+  const skip = () => {
+    if (skipping) return;
+    setSkipping(true);
+    router.push("/onboarding/spirit");
+  };
 
   return (
     <OnboardingShell>
@@ -64,16 +77,24 @@ function GithubConnectContent() {
             render={<a href="/api/github/connect" />}
             size="lg"
             className="w-full gap-2"
+            onClick={() => setConnecting(true)}
+            aria-disabled={connecting}
           >
-            <GitFork className="h-4 w-4" />
-            Connect GitHub
+            {connecting ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <GitFork className="h-4 w-4" />
+            )}
+            {connecting ? "Connecting…" : "Connect GitHub"}
           </Button>
           <button
             type="button"
-            onClick={() => router.push("/onboarding/spirit")}
+            onClick={skip}
+            disabled={skipping}
             className="mx-auto flex items-center gap-1 text-xs text-foreground/40 hover:text-foreground/70"
           >
-            Skip for now <ArrowRight className="h-3 w-3" />
+            {skipping ? "Skipping…" : "Skip for now"}
+            <ArrowRight className="h-3 w-3" />
           </button>
         </div>
       </motion.div>

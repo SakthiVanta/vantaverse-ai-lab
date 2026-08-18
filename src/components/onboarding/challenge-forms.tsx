@@ -2,27 +2,57 @@
 
 import { useState } from "react";
 import { motion, Reorder } from "motion/react";
-import { GripVertical } from "lucide-react";
+import { GripVertical, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import type { Challenge, ChallengeCard } from "@/lib/challenges";
 
 type SubmitFn = (response: unknown, reasoning?: string) => void;
 
+type FormProps<T extends Challenge["type"]> = {
+  challenge: Extract<Challenge, { type: T }>;
+  onSubmit: SubmitFn;
+  submitting: boolean;
+};
+
+function ContinueButton({
+  submitting,
+  disabled,
+  label = "Continue",
+  submittingLabel = "Saving…",
+  onClick,
+}: {
+  submitting: boolean;
+  disabled?: boolean;
+  label?: string;
+  submittingLabel?: string;
+  onClick: () => void;
+}) {
+  return (
+    <Button className="w-full gap-2" size="lg" disabled={disabled || submitting} onClick={onClick}>
+      {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
+      {submitting ? submittingLabel : label}
+    </Button>
+  );
+}
+
 function CardButton({
   card,
   selected,
+  disabled,
   onClick,
 }: {
   card: ChallengeCard;
   selected: boolean;
+  disabled?: boolean;
   onClick: () => void;
 }) {
   return (
     <button
       type="button"
+      disabled={disabled}
       onClick={onClick}
-      className={`w-full rounded-2xl border-[1.5px] px-5 py-4 text-left text-sm font-medium transition-all duration-200 ${
+      className={`w-full rounded-2xl border-[1.5px] px-5 py-4 text-left text-sm font-medium transition-all duration-200 disabled:opacity-50 ${
         selected
           ? "border-foreground bg-accent text-foreground"
           : "border-border bg-card text-foreground/70 hover:border-foreground/40 hover:bg-accent/60"
@@ -36,10 +66,8 @@ function CardButton({
 export function ChoiceWithReasonForm({
   challenge,
   onSubmit,
-}: {
-  challenge: Extract<Challenge, { type: "choice-with-reason" }>;
-  onSubmit: SubmitFn;
-}) {
+  submitting,
+}: FormProps<"choice-with-reason">) {
   const [choice, setChoice] = useState<string | null>(null);
   const [reason, setReason] = useState("");
 
@@ -67,15 +95,13 @@ export function ChoiceWithReasonForm({
         onChange={(e) => setReason(e.target.value)}
         placeholder="One line is enough…"
         rows={3}
+        disabled={submitting}
       />
-      <Button
-        className="w-full"
-        size="lg"
+      <ContinueButton
+        submitting={submitting}
         disabled={!reason.trim()}
         onClick={() => onSubmit({ choice }, reason.trim())}
-      >
-        Continue
-      </Button>
+      />
     </div>
   );
 }
@@ -83,10 +109,8 @@ export function ChoiceWithReasonForm({
 export function RankAndReflectForm({
   challenge,
   onSubmit,
-}: {
-  challenge: Extract<Challenge, { type: "rank-and-reflect" }>;
-  onSubmit: SubmitFn;
-}) {
+  submitting,
+}: FormProps<"rank-and-reflect">) {
   const [order, setOrder] = useState<ChallengeCard[]>(challenge.cards);
   const [ranked, setRanked] = useState<string[] | null>(null);
   const [reflection, setReflection] = useState("");
@@ -114,13 +138,11 @@ export function RankAndReflectForm({
             </Reorder.Item>
           ))}
         </Reorder.Group>
-        <Button
-          className="w-full"
-          size="lg"
+        <ContinueButton
+          submitting={false}
+          label={`Lock in my top ${challenge.rankCount}`}
           onClick={() => setRanked(order.slice(0, challenge.rankCount).map((c) => c.id))}
-        >
-          Lock in my top {challenge.rankCount}
-        </Button>
+        />
       </div>
     );
   }
@@ -133,15 +155,13 @@ export function RankAndReflectForm({
         value={reflection}
         onChange={(e) => setReflection(e.target.value)}
         rows={3}
+        disabled={submitting}
       />
-      <Button
-        className="w-full"
-        size="lg"
+      <ContinueButton
+        submitting={submitting}
         disabled={!reflection.trim()}
         onClick={() => onSubmit({ ranked }, reflection.trim())}
-      >
-        Continue
-      </Button>
+      />
     </div>
   );
 }
@@ -149,10 +169,8 @@ export function RankAndReflectForm({
 export function ChoiceWithSentenceForm({
   challenge,
   onSubmit,
-}: {
-  challenge: Extract<Challenge, { type: "choice-with-sentence" }>;
-  onSubmit: SubmitFn;
-}) {
+  submitting,
+}: FormProps<"choice-with-sentence">) {
   const [choice, setChoice] = useState<string | null>(null);
   const [sentence, setSentence] = useState("");
 
@@ -180,26 +198,18 @@ export function ChoiceWithSentenceForm({
         value={sentence}
         onChange={(e) => setSentence(e.target.value)}
         rows={2}
+        disabled={submitting}
       />
-      <Button
-        className="w-full"
-        size="lg"
+      <ContinueButton
+        submitting={submitting}
         disabled={!sentence.trim()}
         onClick={() => onSubmit({ choice, sentence: sentence.trim() })}
-      >
-        Continue
-      </Button>
+      />
     </div>
   );
 }
 
-export function SequenceForm({
-  challenge,
-  onSubmit,
-}: {
-  challenge: Extract<Challenge, { type: "sequence" }>;
-  onSubmit: SubmitFn;
-}) {
+export function SequenceForm({ challenge, onSubmit, submitting }: FormProps<"sequence">) {
   const [picked, setPicked] = useState<ChallengeCard[]>([]);
   const remaining = challenge.cards.filter((c) => !picked.some((p) => p.id === c.id));
 
@@ -242,25 +252,16 @@ export function SequenceForm({
         </div>
       )}
       {isComplete && (
-        <Button
-          className="w-full"
-          size="lg"
+        <ContinueButton
+          submitting={submitting}
           onClick={() => onSubmit({ sequence: picked.map((c) => c.id) })}
-        >
-          Continue
-        </Button>
+        />
       )}
     </div>
   );
 }
 
-export function FreeformForm({
-  challenge,
-  onSubmit,
-}: {
-  challenge: Extract<Challenge, { type: "freeform" }>;
-  onSubmit: SubmitFn;
-}) {
+export function FreeformForm({ challenge, onSubmit, submitting }: FormProps<"freeform">) {
   const [text, setText] = useState("");
   return (
     <div className="space-y-4">
@@ -273,15 +274,13 @@ export function FreeformForm({
         onChange={(e) => setText(e.target.value)}
         rows={6}
         placeholder="Your first genuine idea…"
+        disabled={submitting}
       />
-      <Button
-        className="w-full"
-        size="lg"
+      <ContinueButton
+        submitting={submitting}
         disabled={!text.trim()}
         onClick={() => onSubmit({ text: text.trim() })}
-      >
-        Continue
-      </Button>
+      />
     </div>
   );
 }
@@ -289,10 +288,8 @@ export function FreeformForm({
 export function TradeoffWithReasonForm({
   challenge,
   onSubmit,
-}: {
-  challenge: Extract<Challenge, { type: "tradeoff-with-reason" }>;
-  onSubmit: SubmitFn;
-}) {
+  submitting,
+}: FormProps<"tradeoff-with-reason">) {
   const [choice, setChoice] = useState<string | null>(null);
   const [reason, setReason] = useState("");
 
@@ -321,26 +318,23 @@ export function TradeoffWithReasonForm({
   return (
     <div className="space-y-4">
       <p className="text-sm font-medium text-foreground/80">{challenge.reasonPrompt}</p>
-      <Textarea autoFocus value={reason} onChange={(e) => setReason(e.target.value)} rows={3} />
-      <Button
-        className="w-full"
-        size="lg"
+      <Textarea
+        autoFocus
+        value={reason}
+        onChange={(e) => setReason(e.target.value)}
+        rows={3}
+        disabled={submitting}
+      />
+      <ContinueButton
+        submitting={submitting}
         disabled={!reason.trim()}
         onClick={() => onSubmit({ choice }, reason.trim())}
-      >
-        Continue
-      </Button>
+      />
     </div>
   );
 }
 
-export function ProblemForm({
-  challenge,
-  onSubmit,
-}: {
-  challenge: Extract<Challenge, { type: "problem-form" }>;
-  onSubmit: SubmitFn;
-}) {
+export function ProblemForm({ challenge, onSubmit, submitting }: FormProps<"problem-form">) {
   const [values, setValues] = useState<Record<string, string>>({});
   const allFilled = challenge.fields.every((f) => values[f.id]?.trim());
 
@@ -353,12 +347,12 @@ export function ProblemForm({
             value={values[field.id] ?? ""}
             onChange={(e) => setValues({ ...values, [field.id]: e.target.value })}
             rows={2}
+            disabled={submitting}
           />
         </div>
       ))}
-      <Button
-        className="w-full"
-        size="lg"
+      <ContinueButton
+        submitting={submitting}
         disabled={!allFilled}
         onClick={() =>
           onSubmit({
@@ -367,9 +361,7 @@ export function ProblemForm({
             why: values.why.trim(),
           })
         }
-      >
-        Continue
-      </Button>
+      />
     </div>
   );
 }
@@ -377,10 +369,8 @@ export function ProblemForm({
 export function SentenceCompleteForm({
   challenge,
   onSubmit,
-}: {
-  challenge: Extract<Challenge, { type: "sentence-complete" }>;
-  onSubmit: SubmitFn;
-}) {
+  submitting,
+}: FormProps<"sentence-complete">) {
   const [sentence, setSentence] = useState("");
   return (
     <div className="space-y-4">
@@ -390,15 +380,15 @@ export function SentenceCompleteForm({
         value={sentence}
         onChange={(e) => setSentence(e.target.value)}
         rows={3}
+        disabled={submitting}
       />
-      <Button
-        className="w-full"
-        size="lg"
+      <ContinueButton
+        submitting={submitting}
+        label="Finish"
+        submittingLabel="Finishing…"
         disabled={!sentence.trim()}
         onClick={() => onSubmit({ sentence: sentence.trim() })}
-      >
-        Finish
-      </Button>
+      />
     </div>
   );
 }
