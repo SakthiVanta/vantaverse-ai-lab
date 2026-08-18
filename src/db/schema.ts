@@ -429,6 +429,118 @@ export const assignmentSubmissions = pgTable("assignment_submissions", {
     .defaultNow(),
 });
 
+// ── Project chat (one group channel per project/assignment) ─────────
+
+export const chatSenderRoleEnum = pgEnum("chat_sender_role", ["participant", "admin"]);
+
+export const projectMessages = pgTable(
+  "project_messages",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    assignmentId: uuid("assignment_id")
+      .notNull()
+      .references(() => assignments.id, { onDelete: "cascade" }),
+    senderParticipantId: uuid("sender_participant_id").references(() => participants.id, {
+      onDelete: "set null",
+    }),
+    senderAdminId: uuid("sender_admin_id").references(() => adminUsers.id, {
+      onDelete: "set null",
+    }),
+    // Denormalized so listing a channel never has to join participants/admins
+    // per message — matters once a project has thousands of messages.
+    senderName: text("sender_name").notNull(),
+    senderRole: chatSenderRoleEnum("sender_role").notNull(),
+    body: text("body").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [index("project_messages_assignment_created_idx").on(table.assignmentId, table.createdAt)]
+);
+
+export const projectMessagesRelations = relations(projectMessages, ({ one }) => ({
+  assignment: one(assignments, {
+    fields: [projectMessages.assignmentId],
+    references: [assignments.id],
+  }),
+}));
+
+// ── Research module (articles published inside a project) ───────────
+
+export const researchArticles = pgTable(
+  "research_articles",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    assignmentId: uuid("assignment_id")
+      .notNull()
+      .references(() => assignments.id, { onDelete: "cascade" }),
+    authorParticipantId: uuid("author_participant_id")
+      .notNull()
+      .references(() => participants.id, { onDelete: "cascade" }),
+    authorName: text("author_name").notNull(),
+    title: text("title").notNull(),
+    content: text("content").notNull(), // markdown
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [index("research_articles_assignment_created_idx").on(table.assignmentId, table.createdAt)]
+);
+
+export const researchArticlesRelations = relations(researchArticles, ({ one, many }) => ({
+  assignment: one(assignments, {
+    fields: [researchArticles.assignmentId],
+    references: [assignments.id],
+  }),
+  author: one(participants, {
+    fields: [researchArticles.authorParticipantId],
+    references: [participants.id],
+  }),
+  likes: many(researchArticleLikes),
+  comments: many(researchArticleComments),
+}));
+
+export const researchArticleLikes = pgTable(
+  "research_article_likes",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    articleId: uuid("article_id")
+      .notNull()
+      .references(() => researchArticles.id, { onDelete: "cascade" }),
+    participantId: uuid("participant_id")
+      .notNull()
+      .references(() => participants.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [uniqueIndex("research_article_likes_unique_idx").on(table.articleId, table.participantId)]
+);
+
+export const researchArticleComments = pgTable(
+  "research_article_comments",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    articleId: uuid("article_id")
+      .notNull()
+      .references(() => researchArticles.id, { onDelete: "cascade" }),
+    participantId: uuid("participant_id")
+      .notNull()
+      .references(() => participants.id, { onDelete: "cascade" }),
+    authorName: text("author_name").notNull(),
+    body: text("body").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [index("research_article_comments_article_created_idx").on(table.articleId, table.createdAt)]
+);
+
 export const assignmentsRelations = relations(assignments, ({ many }) => ({
   targets: many(assignmentTargets),
+  messages: many(projectMessages),
+  articles: many(researchArticles),
 }));

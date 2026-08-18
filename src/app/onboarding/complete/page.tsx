@@ -329,7 +329,7 @@ function ResultView({ result, participantId }: { result: ResultData; participant
 
       <div className="mt-14 flex justify-center">
         <Link
-          href="/"
+          href="/onboarding/dashboard"
           className="rounded-full bg-foreground px-8 py-4 text-sm font-semibold text-background transition-transform duration-300 hover:scale-[1.03]"
         >
           Enter Vantaverse Lab
