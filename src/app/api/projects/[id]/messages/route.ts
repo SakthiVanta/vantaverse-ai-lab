@@ -40,6 +40,7 @@ export async function GET(
       body: m.body,
       senderName: m.senderName,
       senderRole: m.senderRole,
+      senderEmoji: m.senderEmoji,
       isMe:
         (actor.type === "participant" && m.senderParticipantId === actor.id) ||
         (actor.type === "admin" && m.senderAdminId === actor.id),
@@ -84,6 +85,7 @@ export async function POST(
       senderAdminId: actor.type === "admin" ? actor.id : null,
       senderName: actor.name,
       senderRole: actor.type,
+      senderEmoji: actor.emoji,
       body: parsed.data.body,
     })
     .returning();
@@ -94,6 +96,7 @@ export async function POST(
       body: message.body,
       senderName: message.senderName,
       senderRole: message.senderRole,
+      senderEmoji: message.senderEmoji,
       isMe: true,
       createdAt: message.createdAt,
     },

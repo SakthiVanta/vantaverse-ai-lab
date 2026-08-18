@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect } from "react";
+import { Suspense, use, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
@@ -31,7 +31,9 @@ export default function ParticipantProjectPage({
       >
         <ArrowLeft className="h-3 w-3" /> Dashboard
       </Link>
-      <ProjectWorkspace projectId={id} actorType="participant" />
+      <Suspense fallback={null}>
+        <ProjectWorkspace projectId={id} actorType="participant" />
+      </Suspense>
     </OnboardingShell>
   );
 }

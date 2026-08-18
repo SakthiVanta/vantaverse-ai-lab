@@ -19,9 +19,13 @@ type ProjectDetail = {
 export function ProjectWorkspace({
   projectId,
   actorType,
+  refreshKey,
 }: {
   projectId: string;
   actorType: "participant" | "admin";
+  /** Bump this to force a refetch of the project header (e.g. after an
+   * admin edits it) without remounting the chat/research tab state. */
+  refreshKey?: number;
 }) {
   const [project, setProject] = useState<ProjectDetail | null>(null);
   const [notFound, setNotFound] = useState(false);
@@ -34,7 +38,7 @@ export function ProjectWorkspace({
       })
       .then((data) => setProject(data.project))
       .catch(() => setNotFound(true));
-  }, [projectId]);
+  }, [projectId, refreshKey]);
 
   if (notFound) {
     return (

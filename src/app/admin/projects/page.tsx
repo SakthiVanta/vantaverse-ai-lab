@@ -3,13 +3,14 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { Loader2, Plus } from "lucide-react";
+import { Loader2, Plus, Trash2 } from "lucide-react";
 import { AdminHeader } from "@/components/admin/admin-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { useConfirmDialog } from "@/components/ui/confirm-dialog";
 
 type Project = {
   id: string;
@@ -29,6 +30,8 @@ export default function AdminProjectsPage() {
   const [description, setDescription] = useState("");
   const [difficulty, setDifficulty] = useState("intermediate");
   const [deadline, setDeadline] = useState("");
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const { confirm, dialog: confirmDialog } = useConfirmDialog();
 
   const load = () => {
     fetch("/api/admin/projects", { cache: "no-store" })
@@ -68,6 +71,31 @@ export default function AdminProjectsPage() {
       toast.error("You're offline — check your connection and try again.");
     } finally {
       setCreating(false);
+    }
+  };
+
+  const deleteProject = async (id: string, title: string) => {
+    const ok = await confirm({
+      title: `Delete "${title}"?`,
+      description: "This also permanently removes its chat and research history.",
+      confirmLabel: "Delete project",
+      destructive: true,
+    });
+    if (!ok) return;
+    setDeletingId(id);
+    try {
+      const res = await fetch(`/api/admin/projects/${id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        toast.error(data.error ?? "Couldn't delete that project");
+        return;
+      }
+      toast.success("Project deleted");
+      setProjects((prev) => prev?.filter((p) => p.id !== id) ?? prev);
+    } catch {
+      toast.error("You're offline — check your connection and try again.");
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -143,12 +171,11 @@ export default function AdminProjectsPage() {
             </div>
           )}
           {projects?.map((p) => (
-            <Link
+            <div
               key={p.id}
-              href={`/admin/projects/${p.id}`}
               className="hairline flex items-center justify-between gap-4 rounded-2xl bg-card px-5 py-4 transition-colors hover:bg-accent/60"
             >
-              <div>
+              <Link href={`/admin/projects/${p.id}`} className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <span className="font-medium">{p.title}</span>
                   <Badge variant="secondary" className="capitalize">
@@ -156,12 +183,27 @@ export default function AdminProjectsPage() {
                   </Badge>
                 </div>
                 <p className="mt-1 line-clamp-1 text-xs text-foreground/45">{p.description}</p>
-              </div>
+              </Link>
               <span className="shrink-0 text-xs text-foreground/40">{p.memberCount} builders</span>
-            </Link>
+              <Button
+                size="icon-sm"
+                variant="ghost"
+                className="shrink-0 text-foreground/40 hover:text-destructive"
+                disabled={deletingId === p.id}
+                onClick={() => deleteProject(p.id, p.title)}
+                aria-label={`Delete ${p.title}`}
+              >
+                {deletingId === p.id ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Trash2 className="h-3.5 w-3.5" />
+                )}
+              </Button>
+            </div>
           ))}
         </div>
       </main>
+      {confirmDialog}
     </div>
   );
 }

@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { renderToBuffer } from "@react-pdf/renderer";
-import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
+import { Document, Page, Text, StyleSheet } from "@react-pdf/renderer";
 import { db } from "@/db";
 import { researchArticles, assignments } from "@/db/schema";
 import { and, eq } from "drizzle-orm";
 import { resolveProjectActor } from "@/lib/project-access";
+import { renderArticleBodyToPdf } from "@/lib/article-pdf-blocks";
 
 export const runtime = "nodejs";
 
@@ -13,7 +14,6 @@ const styles = StyleSheet.create({
   eyebrow: { fontSize: 9, color: "#78716c", letterSpacing: 2, marginBottom: 6 },
   title: { fontSize: 22, fontWeight: 700, marginBottom: 10 },
   meta: { fontSize: 10, color: "#78716c", marginBottom: 24 },
-  paragraph: { marginBottom: 10, lineHeight: 1.6 },
   footer: {
     position: "absolute",
     bottom: 32,
@@ -42,8 +42,6 @@ export async function GET(
   ]);
   if (!article || !project) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const paragraphs = article.content.split(/\n{2,}/).filter((p) => p.trim());
-
   const buffer = await renderToBuffer(
     <Document>
       <Page size="A4" style={styles.page}>
@@ -52,13 +50,7 @@ export async function GET(
         <Text style={styles.meta}>
           By {article.authorName} · {article.createdAt.toLocaleDateString()}
         </Text>
-        <View>
-          {paragraphs.map((p, i) => (
-            <Text key={i} style={styles.paragraph}>
-              {p.trim()}
-            </Text>
-          ))}
-        </View>
+        {renderArticleBodyToPdf(article.content)}
         <Text style={styles.footer} fixed>
           Vantaverse AI Builder Lab — Founding Builders · Cohort 01
         </Text>

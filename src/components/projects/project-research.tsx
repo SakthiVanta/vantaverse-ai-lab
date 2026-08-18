@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { toast } from "sonner";
-import { ArrowLeft, Download, Heart, Loader2, MessageSquare, Plus } from "lucide-react";
+import { ArrowLeft, Check, Copy, Download, Heart, Loader2, MessageSquare, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { RichTextEditor, RichTextView } from "@/components/editor/rich-text-editor";
 
 type ArticleSummary = {
   id: string;
@@ -24,7 +25,11 @@ type ArticleDetail = {
   comments: { id: string; body: string; authorName: string; createdAt: string }[];
 };
 
-type View = { mode: "list" } | { mode: "detail"; articleId: string } | { mode: "publish" };
+/** Cheap client-side "is there actually anything written" check — final
+ * sanitization/validation still happens server-side; this is just UX. */
+function hasVisibleContent(html: string): boolean {
+  return html.replace(/<[^>]+>/g, "").trim().length > 0;
+}
 
 export function ProjectResearch({
   projectId,
@@ -33,25 +38,39 @@ export function ProjectResearch({
   projectId: string;
   canPublish: boolean;
 }) {
-  const [view, setView] = useState<View>({ mode: "list" });
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const articleParam = searchParams.get("article");
+  const [publishing, setPublishing] = useState(false);
 
-  if (view.mode === "publish") {
+  const openArticle = (id: string | null) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (id) params.set("article", id);
+    else params.delete("article");
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  };
+
+  if (publishing) {
     return (
       <PublishForm
         projectId={projectId}
-        onCancel={() => setView({ mode: "list" })}
-        onPublished={(id) => setView({ mode: "detail", articleId: id })}
+        onCancel={() => setPublishing(false)}
+        onPublished={(id) => {
+          setPublishing(false);
+          openArticle(id);
+        }}
       />
     );
   }
 
-  if (view.mode === "detail") {
+  if (articleParam) {
     return (
       <ArticleView
         projectId={projectId}
-        articleId={view.articleId}
+        articleId={articleParam}
         canInteract={canPublish}
-        onBack={() => setView({ mode: "list" })}
+        onBack={() => openArticle(null)}
       />
     );
   }
@@ -60,8 +79,8 @@ export function ProjectResearch({
     <ArticleList
       projectId={projectId}
       canPublish={canPublish}
-      onOpen={(id) => setView({ mode: "detail", articleId: id })}
-      onPublish={() => setView({ mode: "publish" })}
+      onOpen={(id) => openArticle(id)}
+      onPublish={() => setPublishing(true)}
     />
   );
 }
@@ -150,13 +169,13 @@ function PublishForm({
   const [publishing, setPublishing] = useState(false);
 
   const publish = async () => {
-    if (!title.trim() || !content.trim() || publishing) return;
+    if (!title.trim() || !hasVisibleContent(content) || publishing) return;
     setPublishing(true);
     try {
       const res = await fetch(`/api/projects/${projectId}/articles`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: title.trim(), content: content.trim() }),
+        body: JSON.stringify({ title: title.trim(), content }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -186,17 +205,15 @@ function PublishForm({
         onChange={(e) => setTitle(e.target.value)}
         disabled={publishing}
       />
-      <Textarea
-        placeholder="Share what you found — write it like an article. Paragraphs are separated by a blank line."
-        rows={12}
-        value={content}
-        onChange={(e) => setContent(e.target.value)}
-        disabled={publishing}
+      <RichTextEditor
+        content={content}
+        onChange={setContent}
+        placeholder="Share what you found — headings, lists, quotes, whatever the idea needs…"
       />
       <Button
         className="w-full gap-2"
         size="lg"
-        disabled={publishing || !title.trim() || !content.trim()}
+        disabled={publishing || !title.trim() || !hasVisibleContent(content)}
         onClick={publish}
       >
         {publishing && <Loader2 className="h-4 w-4 animate-spin" />}
@@ -221,6 +238,7 @@ function ArticleView({
   const [liking, setLiking] = useState(false);
   const [commentText, setCommentText] = useState("");
   const [commenting, setCommenting] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const load = () => {
     fetch(`/api/projects/${projectId}/articles/${articleId}`, { cache: "no-store" })
@@ -274,11 +292,20 @@ function ArticleView({
     }
   };
 
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      toast.success("Link copied");
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error("Couldn't copy — copy the URL from your address bar instead.");
+    }
+  };
+
   if (!detail) {
     return <div className="h-40 animate-pulse rounded-2xl bg-card" />;
   }
-
-  const paragraphs = detail.article.content.split(/\n{2,}/).filter((p) => p.trim());
 
   return (
     <div>
@@ -294,13 +321,11 @@ function ArticleView({
         {detail.article.authorName} · {new Date(detail.article.createdAt).toLocaleDateString()}
       </p>
 
-      <div className="mt-5 space-y-3 text-sm leading-relaxed text-foreground/80">
-        {paragraphs.map((p, i) => (
-          <p key={i}>{p}</p>
-        ))}
+      <div className="mt-5">
+        <RichTextView html={detail.article.content} />
       </div>
 
-      <div className="mt-6 flex items-center gap-2">
+      <div className="mt-6 flex flex-wrap items-center gap-2">
         <button
           onClick={toggleLike}
           disabled={!canInteract || liking}
@@ -310,6 +335,13 @@ function ArticleView({
         >
           <Heart className={`h-3.5 w-3.5 ${detail.likedByMe ? "fill-current" : ""}`} />
           {detail.likeCount}
+        </button>
+        <button
+          onClick={copyLink}
+          className="hairline flex items-center gap-1.5 rounded-full bg-card px-3 py-1.5 text-xs font-medium text-foreground/60 hover:text-foreground"
+        >
+          {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+          {copied ? "Copied" : "Copy link"}
         </button>
         <a
           href={`/api/projects/${projectId}/articles/${articleId}/pdf`}

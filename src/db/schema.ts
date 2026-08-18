@@ -450,6 +450,7 @@ export const projectMessages = pgTable(
     // per message — matters once a project has thousands of messages.
     senderName: text("sender_name").notNull(),
     senderRole: chatSenderRoleEnum("sender_role").notNull(),
+    senderEmoji: text("sender_emoji"), // spirit emoji for participants, fixed icon for admin
     body: text("body").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()

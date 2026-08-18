@@ -6,6 +6,7 @@ import { and, desc, eq, lt, sql, inArray } from "drizzle-orm";
 import { resolveProjectActor } from "@/lib/project-access";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { logEvent } from "@/lib/events";
+import { sanitizeArticleHtml, htmlToPlainText } from "@/lib/sanitize-html";
 
 const PAGE_SIZE = 20;
 
@@ -53,7 +54,7 @@ export async function GET(
     articles: page.map((a) => ({
       id: a.id,
       title: a.title,
-      excerpt: a.content.slice(0, 220),
+      excerpt: htmlToPlainText(a.content).slice(0, 220),
       authorName: a.authorName,
       createdAt: a.createdAt,
       likeCount: likeMap.get(a.id) ?? 0,
@@ -65,7 +66,7 @@ export async function GET(
 
 const bodySchema = z.object({
   title: z.string().trim().min(1).max(200),
-  content: z.string().trim().min(1).max(20000),
+  content: z.string().trim().min(1).max(50000), // raw editor HTML, trimmed further below
 });
 
 export async function POST(
@@ -92,6 +93,11 @@ export async function POST(
     return NextResponse.json({ error: "Add a title and some content" }, { status: 400 });
   }
 
+  const sanitized = sanitizeArticleHtml(parsed.data.content);
+  if (!htmlToPlainText(sanitized)) {
+    return NextResponse.json({ error: "Add some content before publishing" }, { status: 400 });
+  }
+
   const [article] = await db
     .insert(researchArticles)
     .values({
@@ -99,7 +105,7 @@ export async function POST(
       authorParticipantId: actor.id,
       authorName: actor.name,
       title: parsed.data.title,
-      content: parsed.data.content,
+      content: sanitized,
     })
     .returning();
 

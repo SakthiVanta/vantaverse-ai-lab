@@ -2,10 +2,11 @@ import { db } from "@/db";
 import { assignmentTargets, participants } from "@/db/schema";
 import { and, eq } from "drizzle-orm";
 import { getCurrentAdmin, getVerifiedParticipantId } from "@/lib/auth";
+import { getSpiritById } from "@/lib/spirits";
 
 export type ProjectActor =
-  | { type: "participant"; id: string; name: string }
-  | { type: "admin"; id: string; name: string };
+  | { type: "participant"; id: string; name: string; emoji: string }
+  | { type: "admin"; id: string; name: string; emoji: string };
 
 /**
  * Resolves who's allowed to act inside a project (chat, research module):
@@ -17,7 +18,7 @@ export type ProjectActor =
 export async function resolveProjectActor(assignmentId: string): Promise<ProjectActor | null> {
   const admin = await getCurrentAdmin();
   if (admin) {
-    return { type: "admin", id: admin.adminId, name: "Vantaverse Admin" };
+    return { type: "admin", id: admin.adminId, name: "Vantaverse Admin", emoji: "🛡️" };
   }
 
   const participantId = await getVerifiedParticipantId();
@@ -33,7 +34,8 @@ export async function resolveProjectActor(assignmentId: string): Promise<Project
 
   const participant = await db.query.participants.findFirst({
     where: eq(participants.id, participantId),
-    columns: { name: true },
+    columns: { name: true, spiritId: true },
   });
-  return { type: "participant", id: participantId, name: participant?.name ?? "Builder" };
+  const emoji = participant?.spiritId ? getSpiritById(participant.spiritId)?.emoji ?? "👤" : "👤";
+  return { type: "participant", id: participantId, name: participant?.name ?? "Builder", emoji };
 }
