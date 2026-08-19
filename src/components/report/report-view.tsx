@@ -9,6 +9,7 @@ export type ReportResultData = {
   growthSignals?: string[];
   interests?: string[];
   githubSummary?: string | null;
+  githubStale?: boolean;
   cardImageUrl?: string | null;
   problem?: { description: string; who: string; why: string } | null;
   firstDirection?: string;

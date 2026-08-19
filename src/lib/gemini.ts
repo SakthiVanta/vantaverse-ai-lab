@@ -39,6 +39,13 @@ export type GithubEvidence = {
   commitContributionsLastYear: number;
   reposContributedToLastYear: number;
   openSourceContribution: string;
+  // Extra KPIs, only populated for the GitHub-only narrative (the full
+  // behavioral analysis doesn't compute these) — kept optional so
+  // buildAnalysisInput's object stays valid without them.
+  projectDiversity?: string;
+  totalStars?: number;
+  totalForks?: number;
+  topRepo?: { name: string; description: string | null; stars: number } | null;
 };
 
 export type AnalysisInput = {
@@ -53,16 +60,33 @@ export type AnalysisInput = {
 };
 
 function formatGithubEvidence(github: GithubEvidence): string {
-  return `GitHub evidence:
-- username: ${github.username}
-- public repositories analyzed: ${github.repoCount} (owned, non-fork)
-- languages (byte-weighted across all repos): ${JSON.stringify(github.languageBreakdown)}
-- project themes: ${github.projectThemes.join(", ") || "none detected"}
-- activity signal (recency of pushes): ${github.activitySignal}
-- AI project evidence: ${github.aiProjectEvidence}
-- commit contributions in the last ~year (across ALL public repos, owned or not): ${github.commitContributionsLastYear}
-- distinct repos contributed to in the last ~year: ${github.reposContributedToLastYear}
-- open-source contribution signal: ${github.openSourceContribution}`;
+  const lines = [
+    "GitHub evidence:",
+    `- username: ${github.username}`,
+    `- public repositories analyzed: ${github.repoCount} (owned, non-fork)`,
+    `- languages (byte-weighted across all repos): ${JSON.stringify(github.languageBreakdown)}`,
+    `- project themes: ${github.projectThemes.join(", ") || "none detected"}`,
+    `- activity signal (recency of pushes): ${github.activitySignal}`,
+    `- AI project evidence: ${github.aiProjectEvidence}`,
+    `- commit contributions in the last ~year (across ALL public repos, owned or not): ${github.commitContributionsLastYear}`,
+    `- distinct repos contributed to in the last ~year: ${github.reposContributedToLastYear}`,
+    `- open-source contribution signal: ${github.openSourceContribution}`,
+  ];
+  if (github.projectDiversity) {
+    lines.push(`- project diversity across themes: ${github.projectDiversity}`);
+  }
+  if (github.totalStars !== undefined) {
+    lines.push(`- total stars earned across analyzed repos: ${github.totalStars}`);
+  }
+  if (github.totalForks !== undefined) {
+    lines.push(`- total forks earned across analyzed repos: ${github.totalForks}`);
+  }
+  if (github.topRepo) {
+    lines.push(
+      `- most notable repo: "${github.topRepo.name}"${github.topRepo.description ? ` — ${github.topRepo.description}` : ""} (${github.topRepo.stars} stars)`
+    );
+  }
+  return lines.join("\n");
 }
 
 export function buildAnalysisPrompt(input: AnalysisInput): string {
@@ -89,6 +113,8 @@ ${input.challengeResponses
 ${input.problem ? `Problem they'd fix: "${input.problem.description}" — who: "${input.problem.who}" — why it matters: "${input.problem.why}"` : ""}
 
 ${githubBlock}
+
+Judge this person as a builder/developer as rigorously as the evidence allows. Cross-reference their challenge responses against their GitHub building history — where does what they say about themselves (e.g. problem-first vs. build-first instincts, risk tolerance, collaboration style) match or diverge from what they've actually shipped? Surface that alignment or tension explicitly in "strength_signals", "growth_signals", or "evidence" wherever the two sources speak to the same trait — that's the most credible signal you have, stronger than either source alone.
 
 Write "github_summary" the way GitHub's own year-in-review ("your GitHub says about you") talks to a builder: second person, punchy, specific — name real numbers and repos/languages from the evidence above rather than generic praise. Two to four sentences. If GitHub isn't connected, say so in one plain sentence instead.
 
@@ -123,7 +149,9 @@ function resolveModelName(): string {
 export function buildGithubNarrativePrompt(name: string, github: GithubEvidence): string {
   return `You are the Builder Intelligence engine for Vantaverse AI Builder Lab.
 
-Write a short "your GitHub says about you" narrative for ${name} — the way GitHub's own year-in-review talks to a builder: second person, punchy, specific. Three to five sentences. Name real numbers, languages, and themes from the evidence below rather than generic praise. If the evidence is genuinely thin, say so plainly and encouragingly rather than inflating it.
+Write a "your GitHub says about you" read for ${name} — the way GitHub's own year-in-review talks to a builder: second person, confident, punchy, specific. Four to six sentences. Use the sharpest, most concrete details available: their dominant language(s) by weight, their strongest project theme, their most notable repo by name and stars if one stands out, their activity consistency, and their open-source contribution level. Prefer one vivid specific over three vague generalities. If the evidence is genuinely thin, say so plainly and encouragingly rather than inflating it — never invent achievements.
+
+End with one short, punchy line naming the kind of builder their GitHub evidence points to right now (e.g. "You're a fast-shipping generalist" or "You're a deep AI specialist still finding your public voice") — grounded strictly in the evidence below, not a personality guess.
 
 ${formatGithubEvidence(github)}
 
