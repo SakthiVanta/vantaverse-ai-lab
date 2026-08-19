@@ -26,32 +26,34 @@ export function OnboardingShell({
     <div className={`relative flex min-h-screen flex-col ${wide ? "lg:pl-56" : ""}`}>
       <SandBackground />
       {wide && <SidebarNav />}
-      <header className={`relative z-10 mx-auto flex w-full ${contentWidth} items-center justify-between px-6 py-6`}>
-        <Link
-          href="/onboarding/dashboard"
-          className={`font-heading text-xs font-semibold tracking-[0.2em] text-foreground/50 transition-colors hover:text-foreground/80 ${
-            wide ? "lg:hidden" : ""
-          }`}
-        >
-          VANTAVERSE
-        </Link>
-        <div className="flex items-center gap-3">
-          {step && (
-            <span className="text-xs font-medium tracking-wide text-foreground/40">
-              {step.index.toString().padStart(2, "0")} / {step.total.toString().padStart(2, "0")}
-            </span>
-          )}
-          {!wide && (
-            <Link
-              href="/onboarding/profile"
-              aria-label="Your profile"
-              className="hairline inline-flex h-8 w-8 items-center justify-center rounded-full bg-card text-foreground/70 transition-colors hover:text-foreground"
-            >
-              <User className="h-3.5 w-3.5" />
-            </Link>
-          )}
-          {wide && <NotificationBell />}
-          <ThemeToggle />
+      <header className="sticky top-0 z-20 bg-background/90 supports-backdrop-filter:bg-background/65 supports-backdrop-filter:backdrop-blur-lg">
+        <div className={`mx-auto flex w-full ${contentWidth} items-center justify-between px-6 py-6`}>
+          <Link
+            href="/onboarding/dashboard"
+            className={`font-heading text-xs font-semibold tracking-[0.2em] text-foreground/50 transition-colors hover:text-foreground/80 ${
+              wide ? "lg:hidden" : ""
+            }`}
+          >
+            VANTAVERSE
+          </Link>
+          <div className="flex items-center gap-3">
+            {step && (
+              <span className="text-xs font-medium tracking-wide text-foreground/40">
+                {step.index.toString().padStart(2, "0")} / {step.total.toString().padStart(2, "0")}
+              </span>
+            )}
+            {!wide && (
+              <Link
+                href="/onboarding/profile"
+                aria-label="Your profile"
+                className="hairline inline-flex h-8 w-8 items-center justify-center rounded-full bg-card text-foreground/70 transition-colors hover:text-foreground"
+              >
+                <User className="h-3.5 w-3.5" />
+              </Link>
+            )}
+            {wide && <NotificationBell />}
+            <ThemeToggle />
+          </div>
         </div>
       </header>
       {step && (
