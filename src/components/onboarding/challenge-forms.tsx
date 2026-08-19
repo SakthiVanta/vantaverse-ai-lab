@@ -36,6 +36,15 @@ function ContinueButton({
   );
 }
 
+/** Mirrors the page-level prompt heading's styling — used by form types
+ * that own their prompt display (see FORM_OWNS_PROMPT in the challenge
+ * page) so it only shows during the step it actually describes. */
+function PromptHeading({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="font-heading text-xl font-semibold text-foreground sm:text-2xl">{children}</p>
+  );
+}
+
 function CardButton({
   card,
   selected,
@@ -73,15 +82,18 @@ export function ChoiceWithReasonForm({
 
   if (!choice) {
     return (
-      <div className="space-y-3">
-        {challenge.cards.map((card) => (
-          <CardButton
-            key={card.id}
-            card={card}
-            selected={false}
-            onClick={() => setChoice(card.id)}
-          />
-        ))}
+      <div className="space-y-4">
+        <PromptHeading>{challenge.prompt}</PromptHeading>
+        <div className="space-y-3">
+          {challenge.cards.map((card) => (
+            <CardButton
+              key={card.id}
+              card={card}
+              selected={false}
+              onClick={() => setChoice(card.id)}
+            />
+          ))}
+        </div>
       </div>
     );
   }
@@ -118,6 +130,7 @@ export function RankAndReflectForm({
   if (!ranked) {
     return (
       <div className="space-y-4">
+        <PromptHeading>{challenge.prompt}</PromptHeading>
         <p className="text-xs text-foreground/40">Drag to reorder — top 3 count.</p>
         <Reorder.Group axis="y" values={order} onReorder={setOrder} className="space-y-2">
           {order.map((card, i) => (
@@ -176,15 +189,18 @@ export function ChoiceWithSentenceForm({
 
   if (!choice) {
     return (
-      <div className="space-y-3">
-        {challenge.cards.map((card) => (
-          <CardButton
-            key={card.id}
-            card={card}
-            selected={false}
-            onClick={() => setChoice(card.id)}
-          />
-        ))}
+      <div className="space-y-4">
+        <PromptHeading>{challenge.prompt}</PromptHeading>
+        <div className="space-y-3">
+          {challenge.cards.map((card) => (
+            <CardButton
+              key={card.id}
+              card={card}
+              selected={false}
+              onClick={() => setChoice(card.id)}
+            />
+          ))}
+        </div>
       </div>
     );
   }
@@ -295,22 +311,25 @@ export function TradeoffWithReasonForm({
 
   if (!choice) {
     return (
-      <div className="grid grid-cols-2 gap-3">
-        {challenge.cards.map((card) => {
-          const [title, ...rest] = card.label.split(" — ");
-          return (
-            <motion.button
-              key={card.id}
-              type="button"
-              whileHover={{ y: -3 }}
-              onClick={() => setChoice(card.id)}
-              className="flex flex-col items-start gap-1 rounded-2xl border-[1.5px] border-border bg-card p-4 text-left transition-colors duration-200 hover:border-foreground/40 hover:bg-accent/60"
-            >
-              <span className="text-sm font-bold tracking-wide text-foreground">{title}</span>
-              <span className="text-xs text-foreground/50">{rest.join(" — ")}</span>
-            </motion.button>
-          );
-        })}
+      <div className="space-y-4">
+        <PromptHeading>{challenge.prompt}</PromptHeading>
+        <div className="grid grid-cols-2 gap-3">
+          {challenge.cards.map((card) => {
+            const [title, ...rest] = card.label.split(" — ");
+            return (
+              <motion.button
+                key={card.id}
+                type="button"
+                whileHover={{ y: -3 }}
+                onClick={() => setChoice(card.id)}
+                className="flex flex-col items-start gap-1 rounded-2xl border-[1.5px] border-border bg-card p-4 text-left transition-colors duration-200 hover:border-foreground/40 hover:bg-accent/60"
+              >
+                <span className="text-sm font-bold tracking-wide text-foreground">{title}</span>
+                <span className="text-xs text-foreground/50">{rest.join(" — ")}</span>
+              </motion.button>
+            );
+          })}
+        </div>
       </div>
     );
   }
