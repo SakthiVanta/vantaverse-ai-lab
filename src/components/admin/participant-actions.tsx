@@ -9,9 +9,11 @@ import { Button } from "@/components/ui/button";
 export function ParticipantActions({
   participantId,
   hasAnalysis,
+  githubConnected,
 }: {
   participantId: string;
   hasAnalysis: boolean;
+  githubConnected: boolean;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
@@ -32,6 +34,26 @@ export function ParticipantActions({
           ? "Analysis complete — builder has been emailed their report"
           : "Analysis complete, but the report email failed to send"
       );
+      router.refresh();
+    } catch {
+      toast.error("You're offline — check your connection and try again.");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const refreshGithub = async () => {
+    setBusy("github");
+    try {
+      const res = await fetch(`/api/admin/participants/${participantId}/refresh-github`, {
+        method: "POST",
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(data.error ?? "Could not refresh GitHub data");
+        return;
+      }
+      toast.success("GitHub data refreshed");
       router.refresh();
     } catch {
       toast.error("You're offline — check your connection and try again.");
@@ -74,6 +96,17 @@ export function ParticipantActions({
       >
         {busy === "report" && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
         {busy === "report" ? "Sending…" : "Send Report"}
+      </Button>
+      <Button
+        size="sm"
+        variant="outline"
+        className="gap-1.5"
+        disabled={!!busy || !githubConnected}
+        onClick={refreshGithub}
+        title={githubConnected ? undefined : "This builder hasn't connected GitHub yet"}
+      >
+        {busy === "github" && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+        {busy === "github" ? "Refreshing…" : "Refresh GitHub"}
       </Button>
       <Button
         size="sm"

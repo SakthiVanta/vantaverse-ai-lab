@@ -75,7 +75,11 @@ export default async function ParticipantDetailPage({
         </div>
 
         <div className="mt-6">
-          <ParticipantActions participantId={id} hasAnalysis={!!analysis} />
+          <ParticipantActions
+            participantId={id}
+            hasAnalysis={!!analysis}
+            githubConnected={!!participant.githubConnected}
+          />
         </div>
 
         <Section title="Identity">
@@ -147,31 +151,81 @@ export default async function ParticipantDetailPage({
 
         {github && (
           <Section title="GitHub Building History">
-            <InfoRow label="Repos analyzed" value={String(countOwnedNonForkRepos(github.repositories))} />
-            <InfoRow label="Activity" value={github.activitySignal ?? "—"} />
-            <InfoRow label="AI project evidence" value={github.aiProjectEvidence ?? "—"} />
-            <InfoRow
-              label="Themes"
-              value={((github.projectThemes as string[]) ?? []).join(", ") || "—"}
-            />
-            <InfoRow
-              label="Languages"
-              value={
-                Object.entries((github.languageBreakdown as Record<string, number>) ?? {})
-                  .sort((a, b) => b[1] - a[1])
-                  .map(([lang, pct]) => `${lang} ${pct}%`)
-                  .join(", ") || "—"
-              }
-            />
-            <InfoRow
-              label="Commit contributions (last ~year)"
-              value={String(github.commitContributionsLastYear ?? 0)}
-            />
-            <InfoRow
-              label="Repos contributed to (last ~year)"
-              value={String(github.reposContributedToLastYear ?? 0)}
-            />
-            <InfoRow label="Open-source contribution" value={github.openSourceContribution ?? "—"} />
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              <StatTile label="Repos analyzed" value={countOwnedNonForkRepos(github.repositories)} />
+              <StatTile label="Activity" value={github.activitySignal ?? "—"} />
+              <StatTile label="AI project evidence" value={github.aiProjectEvidence ?? "—"} />
+              <StatTile label="Commits (last ~year)" value={github.commitContributionsLastYear ?? 0} />
+              <StatTile label="Repos contributed to" value={github.reposContributedToLastYear ?? 0} />
+              <StatTile label="Open-source signal" value={github.openSourceContribution ?? "—"} />
+            </div>
+
+            {(() => {
+              const themes = ((github.projectThemes as string[]) ?? []).filter(Boolean);
+              if (!themes.length) return null;
+              return (
+                <div className="mt-6">
+                  <p className="text-xs font-medium uppercase tracking-wide text-foreground/40">
+                    Themes
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {themes.map((t) => (
+                      <Badge key={t} variant="secondary">
+                        {t}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {(() => {
+              const languages = topLanguages(
+                (github.languageBreakdown as Record<string, number>) ?? {}
+              );
+              if (!languages.length) return null;
+              return (
+                <div className="mt-6">
+                  <p className="text-xs font-medium uppercase tracking-wide text-foreground/40">
+                    Languages
+                  </p>
+                  <div className="mt-3 flex h-2.5 w-full overflow-hidden rounded-full bg-background">
+                    {languages.map(([lang, pct], i) => (
+                      <div
+                        key={lang}
+                        style={{
+                          width: `${pct}%`,
+                          backgroundColor: LANGUAGE_COLORS[i % LANGUAGE_COLORS.length],
+                        }}
+                      />
+                    ))}
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5">
+                    {languages.map(([lang, pct], i) => (
+                      <div
+                        key={lang}
+                        className="flex items-center gap-1.5 text-xs text-foreground/60"
+                      >
+                        <span
+                          className="h-2 w-2 shrink-0 rounded-full"
+                          style={{ backgroundColor: LANGUAGE_COLORS[i % LANGUAGE_COLORS.length] }}
+                        />
+                        {lang}
+                        <span className="text-foreground/35">{pct}%</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+
+            <p className="mt-6 text-sm text-foreground/70">
+              {describeOpenSourceSignal(
+                github.openSourceContribution,
+                github.commitContributionsLastYear ?? 0,
+                github.reposContributedToLastYear ?? 0
+              )}
+            </p>
           </Section>
         )}
 
@@ -236,6 +290,57 @@ function Section({ title, children }: { title: string; children: React.ReactNode
       <div className="mt-4">{children}</div>
     </section>
   );
+}
+
+function StatTile({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div className="rounded-xl border border-border bg-background p-3">
+      <p className="text-[11px] font-medium uppercase tracking-wide text-foreground/45">
+        {label}
+      </p>
+      <p className="mt-1 font-heading text-lg font-semibold text-foreground/90">{value}</p>
+    </div>
+  );
+}
+
+const LANGUAGE_COLORS = [
+  "#e8b84b",
+  "#5b8dd6",
+  "#d67abf",
+  "#6bc48f",
+  "#e06b6b",
+  "#9c7fe0",
+  "#4fb8c4",
+  "#c4924f",
+];
+
+/** Top languages by byte-weighted percentage, filtering the long tail of
+ * near-zero entries a raw byte breakdown always produces, and folding
+ * whatever's left into a single "Other" slice so the total still sums to
+ * ~100%. */
+function topLanguages(
+  breakdown: Record<string, number>,
+  { threshold = 1, max = 6 }: { threshold?: number; max?: number } = {}
+): [string, number][] {
+  const sorted = Object.entries(breakdown)
+    .filter(([, pct]) => pct >= threshold)
+    .sort((a, b) => b[1] - a[1]);
+  if (sorted.length <= max) return sorted;
+  const top = sorted.slice(0, max - 1);
+  const otherPct = sorted.slice(max - 1).reduce((sum, [, pct]) => sum + pct, 0);
+  return otherPct > 0 ? [...top, ["Other", otherPct]] : top;
+}
+
+function describeOpenSourceSignal(
+  level: string | null,
+  commits: number,
+  reposContributedTo: number
+): string {
+  if (!level) return "No open-source contribution signal yet.";
+  if (commits === 0 && reposContributedTo === 0) {
+    return `${level} — no commit contributions detected in the last ~year.`;
+  }
+  return `${level} — ${commits} commit contribution${commits === 1 ? "" : "s"} across ${reposContributedTo} repo${reposContributedTo === 1 ? "" : "s"} in the last ~year.`;
 }
 
 function InfoRow({ label, value }: { label: string; value: string }) {
