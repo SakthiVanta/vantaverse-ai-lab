@@ -30,7 +30,26 @@ export async function GET(
 
   const spirit = participant.spiritId ? getSpiritById(participant.spiritId) : undefined;
   const archetype = analysis?.primaryArchetype ?? "Founding Builder";
-  const interests = ((analysis?.interests as string[]) ?? []).slice(0, 3);
+  const interests = ((analysis?.interests as string[]) ?? []).slice(0, 4);
+
+  // Decorative 1-5 star builder score — the mean of every analyzed signal
+  // (0-100 each) mapped onto a whole-star scale. Rounded to a whole number
+  // since the OG renderer draws stars as raw SVG (no half-star glyph).
+  const signals = (analysis?.signals as Record<string, number> | undefined) ?? null;
+  const starRating = signals
+    ? Math.min(
+        5,
+        Math.max(
+          1,
+          Math.round(
+            (Object.values(signals).reduce((a, b) => a + b, 0) /
+              Object.values(signals).length /
+              100) *
+              5
+          )
+        )
+      )
+    : null;
 
   return new ImageResponse(
     (
@@ -107,18 +126,53 @@ export async function GET(
           >
             {participant.name.toUpperCase()}
           </div>
+          {starRating !== null && (
+            <div style={{ display: "flex", gap: 6, marginTop: 18 }}>
+              {Array.from({ length: 5 }, (_, i) => (
+                <svg
+                  key={i}
+                  width="32"
+                  height="32"
+                  viewBox="0 0 24 24"
+                  style={{ display: "flex" }}
+                >
+                  <path
+                    d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"
+                    fill={i < starRating ? "#e8b84b" : "rgba(242,237,229,0.22)"}
+                  />
+                </svg>
+              ))}
+            </div>
+          )}
           {interests.length > 0 && (
             <div
               style={{
                 display: "flex",
-                fontSize: 18,
-                letterSpacing: 3,
-                color: "#9c948a",
-                marginTop: 18,
-                textTransform: "uppercase",
+                flexWrap: "wrap",
+                justifyContent: "center",
+                gap: 10,
+                marginTop: 22,
+                maxWidth: 760,
               }}
             >
-              {interests.join("  ·  ")}
+              {interests.map((interest) => (
+                <div
+                  key={interest}
+                  style={{
+                    display: "flex",
+                    fontSize: 17,
+                    letterSpacing: 2,
+                    textTransform: "uppercase",
+                    color: "#f2ede5",
+                    background: "rgba(242,237,229,0.08)",
+                    border: "1px solid rgba(242,237,229,0.25)",
+                    borderRadius: 999,
+                    padding: "8px 20px",
+                  }}
+                >
+                  {interest}
+                </div>
+              ))}
             </div>
           )}
         </div>

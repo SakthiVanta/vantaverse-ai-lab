@@ -7,6 +7,20 @@ import { toast } from "sonner";
 import { OnboardingShell } from "@/components/onboarding/onboarding-shell";
 import { useOnboardingState } from "@/hooks/use-onboarding-state";
 import { CHALLENGES, getChallenge, TOTAL_CHALLENGES, type ChallengeKey } from "@/lib/challenges";
+
+// These form types transition to a second internal step (a card choice or
+// ranking, then a reasoning/reflection textarea) whose meaning no longer
+// matches the challenge's top-level `prompt` — e.g. "the_clock"'s "Drag
+// your top three into 1, 2, 3." would keep showing above a plain textarea
+// once ranking is done. Those forms render their own prompt only during
+// the step it actually describes, instead of the page rendering it once
+// and leaving it stuck through both steps.
+const FORM_OWNS_PROMPT = new Set([
+  "choice-with-reason",
+  "rank-and-reflect",
+  "choice-with-sentence",
+  "tradeoff-with-reason",
+]);
 import {
   ChoiceWithReasonForm,
   RankAndReflectForm,
@@ -89,7 +103,7 @@ export default function ChallengePage() {
           <p className="mt-4 text-base leading-relaxed text-foreground/80 sm:text-lg">
             {challenge.situation}
           </p>
-          {"prompt" in challenge && (
+          {"prompt" in challenge && !FORM_OWNS_PROMPT.has(challenge.type) && (
             <p className="mt-3 font-heading text-xl font-semibold text-foreground sm:text-2xl">
               {challenge.prompt}
             </p>

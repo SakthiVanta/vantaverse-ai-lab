@@ -55,11 +55,18 @@ export function OnboardingShell({
         </div>
       </header>
       {step && (
-        <div className={`relative z-10 mx-auto h-[3px] w-full ${contentWidth} rounded-full bg-border px-6`}>
-          <div
-            className="h-[3px] rounded-full bg-foreground transition-all duration-500"
-            style={{ width: `${(step.index / step.total) * 100}%` }}
-          />
+        <div className={`relative z-10 mx-auto w-full ${contentWidth} px-6`}>
+          {/* The px-6 inset lives on this wrapper, not the colored track
+             below — putting it directly on the bg-border element let the
+             padding area read as filled track while the fill's percentage
+             width was computed against the (smaller) content box, so the
+             bar always visually under-represented actual progress. */}
+          <div className="h-[3px] w-full rounded-full bg-border">
+            <div
+              className="h-[3px] rounded-full bg-foreground transition-all duration-500"
+              style={{ width: `${(step.index / step.total) * 100}%` }}
+            />
+          </div>
         </div>
       )}
       {/*
