@@ -197,6 +197,11 @@ export const githubProfiles = pgTable("github_profiles", {
   // profiles saved before this column existed have no stored token and
   // must reconnect once to enable refresh.
   githubAccessTokenEncrypted: text("github_access_token_encrypted"),
+  // Admin-triggered "your GitHub says about you" narrative — independent
+  // of the full behavioral aiAnalyses row (that one requires challenge
+  // responses too; this works off GitHub evidence alone).
+  aiSummary: text("ai_summary"),
+  aiSummaryGeneratedAt: timestamp("ai_summary_generated_at", { withTimezone: true }),
   // GitHub's own weeks/contributionDays shape, stored as fetched — powers
   // the profile activity heatmap. Account-wide, not affected by repo selection.
   contributionCalendar: jsonb("contribution_calendar"),
