@@ -15,8 +15,8 @@ import { ParticipantActions } from "@/components/admin/participant-actions";
 import { Badge } from "@/components/ui/badge";
 import { getSpiritById } from "@/lib/spirits";
 import { CHALLENGES } from "@/lib/challenges";
-import { countOwnedNonForkRepos } from "@/lib/github-summary";
-import { ArrowLeft } from "lucide-react";
+import { countOwnedNonForkRepos, type GithubRepoInput } from "@/lib/github-summary";
+import { ArrowLeft, Star, Sparkles } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -151,7 +151,62 @@ export default async function ParticipantDetailPage({
 
         {github && (
           <Section title="GitHub Building History">
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {(() => {
+              const profile = (github.profile as {
+                name: string | null;
+                bio: string | null;
+                avatarUrl: string;
+                followers: number;
+                publicRepos: number;
+                createdAt: string;
+              } | null) ?? null;
+              if (!profile) return null;
+              return (
+                <div className="flex items-start gap-3 border-b border-border pb-5">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={profile.avatarUrl}
+                    alt={github.username}
+                    className="h-12 w-12 shrink-0 rounded-full border border-border"
+                  />
+                  <div className="min-w-0">
+                    <p className="font-medium text-foreground/90">
+                      {profile.name ?? github.username}{" "}
+                      <span className="font-normal text-foreground/40">@{github.username}</span>
+                    </p>
+                    {profile.bio && (
+                      <p className="mt-0.5 text-sm text-foreground/60">{profile.bio}</p>
+                    )}
+                    <p className="mt-1 text-xs text-foreground/40">
+                      {profile.followers} followers · {profile.publicRepos} public repos · on
+                      GitHub since {new Date(profile.createdAt).getFullYear()}
+                    </p>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {github.aiSummary ? (
+              <div className="hairline mt-5 rounded-2xl bg-background p-5">
+                <p className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-[0.2em] text-foreground/40">
+                  <Sparkles className="h-3 w-3" /> Your GitHub says about you
+                </p>
+                <p className="mt-2 text-sm leading-relaxed text-foreground/75">
+                  {github.aiSummary}
+                </p>
+                {github.aiSummaryGeneratedAt && (
+                  <p className="mt-2 text-[11px] text-foreground/35">
+                    Generated {new Date(github.aiSummaryGeneratedAt).toLocaleString()}
+                  </p>
+                )}
+              </div>
+            ) : (
+              <p className="mt-5 text-sm text-foreground/45">
+                No GitHub AI narrative yet — click &ldquo;Analyze GitHub&rdquo; above to generate one.
+              </p>
+            )}
+
+            <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
               <StatTile label="Repos analyzed" value={countOwnedNonForkRepos(github.repositories)} />
               <StatTile label="Activity" value={github.activitySignal ?? "—"} />
               <StatTile label="AI project evidence" value={github.aiProjectEvidence ?? "—"} />
@@ -212,6 +267,38 @@ export default async function ParticipantDetailPage({
                         />
                         {lang}
                         <span className="text-foreground/35">{pct}%</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {(() => {
+              const repos = topRepos(github.repositories);
+              if (!repos.length) return null;
+              return (
+                <div className="mt-6">
+                  <p className="text-xs font-medium uppercase tracking-wide text-foreground/40">
+                    Top repositories
+                  </p>
+                  <div className="mt-3 space-y-2">
+                    {repos.map((r) => (
+                      <div
+                        key={r.name}
+                        className="flex items-center justify-between gap-3 rounded-xl border border-border bg-background px-3 py-2"
+                      >
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium text-foreground/85">
+                            {r.name}
+                          </p>
+                          {r.description && (
+                            <p className="truncate text-xs text-foreground/45">{r.description}</p>
+                          )}
+                        </div>
+                        <span className="flex shrink-0 items-center gap-1 text-xs text-foreground/50">
+                          <Star className="h-3 w-3" /> {r.stargazersCount}
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -329,6 +416,19 @@ function topLanguages(
   const top = sorted.slice(0, max - 1);
   const otherPct = sorted.slice(max - 1).reduce((sum, [, pct]) => sum + pct, 0);
   return otherPct > 0 ? [...top, ["Other", otherPct]] : top;
+}
+
+/** Owned, non-fork, non-archived repos ranked by stars (falling back to
+ * recency for repos with none), capped for a compact list. */
+function topRepos(repositories: unknown, max = 5): GithubRepoInput[] {
+  if (!Array.isArray(repositories)) return [];
+  return (repositories as GithubRepoInput[])
+    .filter((r) => !r.fork && !r.archived)
+    .sort((a, b) => {
+      if (b.stargazersCount !== a.stargazersCount) return b.stargazersCount - a.stargazersCount;
+      return new Date(b.pushedAt).getTime() - new Date(a.pushedAt).getTime();
+    })
+    .slice(0, max);
 }
 
 function describeOpenSourceSignal(

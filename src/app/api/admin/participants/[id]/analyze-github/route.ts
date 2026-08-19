@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { refreshGithubProfile, GithubTokenMissingError } from "@/lib/github-profile";
+import { runGithubAiAnalysis, GithubTokenMissingError } from "@/lib/github-profile";
 
 export async function POST(
   _req: Request,
@@ -7,14 +7,14 @@ export async function POST(
 ) {
   const { id } = await params;
   try {
-    const { summary } = await refreshGithubProfile(id);
-    return NextResponse.json({ ok: true, summary });
+    const { summary, aiSummary } = await runGithubAiAnalysis(id);
+    return NextResponse.json({ ok: true, summary, aiSummary });
   } catch (err) {
     if (err instanceof GithubTokenMissingError) {
       return NextResponse.json({ error: err.message, needsReconnect: true }, { status: 409 });
     }
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "GitHub refresh failed" },
+      { error: err instanceof Error ? err.message : "GitHub analysis failed" },
       { status: 500 }
     );
   }

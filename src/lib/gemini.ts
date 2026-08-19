@@ -29,6 +29,18 @@ export const analysisSchema = z.object({
 
 export type BuilderAnalysis = z.infer<typeof analysisSchema>;
 
+export type GithubEvidence = {
+  username: string;
+  languageBreakdown: Record<string, number>;
+  projectThemes: string[];
+  activitySignal: string;
+  aiProjectEvidence: string;
+  repoCount: number;
+  commitContributionsLastYear: number;
+  reposContributedToLastYear: number;
+  openSourceContribution: string;
+};
+
 export type AnalysisInput = {
   name: string;
   challengeResponses: {
@@ -37,31 +49,25 @@ export type AnalysisInput = {
     reasoning?: string | null;
   }[];
   problem?: { description: string; who: string; why: string } | null;
-  github?: {
-    username: string;
-    languageBreakdown: Record<string, number>;
-    projectThemes: string[];
-    activitySignal: string;
-    aiProjectEvidence: string;
-    repoCount: number;
-    commitContributionsLastYear: number;
-    reposContributedToLastYear: number;
-    openSourceContribution: string;
-  } | null;
+  github?: GithubEvidence | null;
 };
+
+function formatGithubEvidence(github: GithubEvidence): string {
+  return `GitHub evidence:
+- username: ${github.username}
+- public repositories analyzed: ${github.repoCount} (owned, non-fork)
+- languages (byte-weighted across all repos): ${JSON.stringify(github.languageBreakdown)}
+- project themes: ${github.projectThemes.join(", ") || "none detected"}
+- activity signal (recency of pushes): ${github.activitySignal}
+- AI project evidence: ${github.aiProjectEvidence}
+- commit contributions in the last ~year (across ALL public repos, owned or not): ${github.commitContributionsLastYear}
+- distinct repos contributed to in the last ~year: ${github.reposContributedToLastYear}
+- open-source contribution signal: ${github.openSourceContribution}`;
+}
 
 export function buildAnalysisPrompt(input: AnalysisInput): string {
   const githubBlock = input.github
-    ? `GitHub evidence:
-- username: ${input.github.username}
-- public repositories analyzed: ${input.github.repoCount} (owned, non-fork)
-- languages (byte-weighted across all repos): ${JSON.stringify(input.github.languageBreakdown)}
-- project themes: ${input.github.projectThemes.join(", ") || "none detected"}
-- activity signal (recency of pushes): ${input.github.activitySignal}
-- AI project evidence: ${input.github.aiProjectEvidence}
-- commit contributions in the last ~year (across ALL public repos, owned or not): ${input.github.commitContributionsLastYear}
-- distinct repos contributed to in the last ~year: ${input.github.reposContributedToLastYear}
-- open-source contribution signal: ${input.github.openSourceContribution}`
+    ? formatGithubEvidence(input.github)
     : "GitHub evidence: not connected. Do not penalize the participant for this — simply note limited evidence where relevant.";
 
   return `You are the Builder Intelligence engine for Vantaverse AI Builder Lab.
@@ -112,6 +118,27 @@ export function parseAnalysisResponse(raw: string): BuilderAnalysis {
 
 function resolveModelName(): string {
   return process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
+}
+
+export function buildGithubNarrativePrompt(name: string, github: GithubEvidence): string {
+  return `You are the Builder Intelligence engine for Vantaverse AI Builder Lab.
+
+Write a short "your GitHub says about you" narrative for ${name} — the way GitHub's own year-in-review talks to a builder: second person, punchy, specific. Three to five sentences. Name real numbers, languages, and themes from the evidence below rather than generic praise. If the evidence is genuinely thin, say so plainly and encouragingly rather than inflating it.
+
+${formatGithubEvidence(github)}
+
+Return ONLY the narrative text — no JSON, no markdown fences, no headings, no quotation marks around it.`;
+}
+
+/** GitHub-only AI narrative — admin-triggered, independent of the full
+ * behavioral analysis (which requires challenge responses too). Always
+ * uses the admin fallback key. */
+export async function runGithubNarrative(apiKey: string, name: string, github: GithubEvidence): Promise<string> {
+  const genAI = new GoogleGenerativeAI(apiKey);
+  const model = genAI.getGenerativeModel({ model: resolveModelName() });
+  const prompt = buildGithubNarrativePrompt(name, github);
+  const result = await model.generateContent(prompt);
+  return result.response.text().trim();
 }
 
 /**
