@@ -84,6 +84,8 @@ ${input.problem ? `Problem they'd fix: "${input.problem.description}" — who: "
 
 ${githubBlock}
 
+Write "github_summary" the way GitHub's own year-in-review ("your GitHub says about you") talks to a builder: second person, punchy, specific — name real numbers and repos/languages from the evidence above rather than generic praise. Two to four sentences. If GitHub isn't connected, say so in one plain sentence instead.
+
 Return ONLY valid JSON matching this exact shape (no markdown fences, no commentary):
 {
   "builder_identity": { "primary_archetype": string, "secondary_archetype": string },

@@ -9,10 +9,12 @@ import { Download, ArrowRight, FolderKanban, FileText, Sparkles, Lock, Loader2 }
 import { OnboardingShell } from "@/components/onboarding/onboarding-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import { ReportModal } from "@/components/report/report-modal";
 import type { ReportResultData } from "@/components/report/report-view";
 import { useOnboardingState } from "@/hooks/use-onboarding-state";
 import { useAiKeyStatus } from "@/hooks/use-ai-key-status";
+import { SIGNAL_LABELS, type SignalDimension } from "@/lib/signals";
 
 type Project = {
   id: string;
@@ -80,6 +82,9 @@ export default function DashboardPage() {
   if (!state?.participant) return null;
 
   const cardUrl = `/api/builder-card/${state.participant.id}`;
+  const sortedSignals = Object.entries(result?.signals ?? {}).sort(
+    (a, b) => b[1] - a[1]
+  ) as [SignalDimension, number][];
 
   const runAnalysis = async () => {
     setAnalyzing(true);
@@ -225,6 +230,37 @@ export default function DashboardPage() {
             </div>
           </div>
         </div>
+
+        {result?.ready && (
+          <div className="mt-14">
+            <p className="text-xs font-medium uppercase tracking-[0.25em] text-foreground/40">
+              Builder Signals
+            </p>
+
+            {result.githubSummary && (
+              <div className="hairline mt-4 rounded-2xl bg-card p-5">
+                <p className="text-xs font-medium uppercase tracking-[0.2em] text-foreground/40">
+                  Your GitHub says about you
+                </p>
+                <p className="mt-2 text-sm leading-relaxed text-foreground/75">
+                  {result.githubSummary}
+                </p>
+              </div>
+            )}
+
+            <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+              {sortedSignals.map(([key, value]) => (
+                <div key={key} className="hairline rounded-2xl bg-card p-4">
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-foreground/45">
+                    {SIGNAL_LABELS[key]}
+                  </p>
+                  <p className="mt-1 font-heading text-2xl font-semibold">{value}</p>
+                  <Progress value={value} className="mt-2" />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </motion.div>
 
       {result?.ready && (
