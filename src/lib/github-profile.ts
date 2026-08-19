@@ -9,8 +9,21 @@ import {
   computeRepoKpis,
   type GithubRepoInput,
 } from "@/lib/github-summary";
-import { runGithubNarrative } from "@/lib/gemini";
+import { runGithubNarrative, githubNarrativeSchema, type GithubNarrative } from "@/lib/gemini";
 import { requireAdminFallbackKey } from "@/lib/ai-key";
+
+/** Parses a stored aiSummary column back into structured cards. Falls back
+ * to null for rows generated before this became structured JSON (plain
+ * text) — the UI renders those as a single legacy paragraph instead. */
+export function parseGithubNarrative(raw: string | null): GithubNarrative | null {
+  if (!raw) return null;
+  try {
+    const parsed = githubNarrativeSchema.safeParse(JSON.parse(raw));
+    return parsed.success ? parsed.data : null;
+  } catch {
+    return null;
+  }
+}
 
 export class GithubTokenMissingError extends Error {
   constructor() {
@@ -126,7 +139,7 @@ export async function runGithubAiAnalysis(participantId: string) {
   const repoKpis = computeRepoKpis((profileRow.repositories as GithubRepoInput[]) ?? []);
 
   const apiKey = requireAdminFallbackKey();
-  const aiSummary = await runGithubNarrative(apiKey, participant?.name ?? username, {
+  const narrative = await runGithubNarrative(apiKey, participant?.name ?? username, {
     username,
     languageBreakdown: summary.languageBreakdown,
     projectThemes: summary.projectThemes,
@@ -142,10 +155,10 @@ export async function runGithubAiAnalysis(participantId: string) {
 
   await db
     .update(githubProfiles)
-    .set({ aiSummary, aiSummaryGeneratedAt: new Date() })
+    .set({ aiSummary: JSON.stringify(narrative), aiSummaryGeneratedAt: new Date() })
     .where(eq(githubProfiles.id, profileRow.id));
 
-  return { summary, aiSummary };
+  return { summary, aiSummary: narrative };
 }
 
 /** Admin-triggered disconnect: deletes all stored GitHub data (profile,

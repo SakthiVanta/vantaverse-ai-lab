@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { ReportModal } from "@/components/report/report-modal";
 import type { ReportResultData } from "@/components/report/report-view";
+import { GithubSnapshot } from "@/components/onboarding/github-snapshot";
 import { useOnboardingState } from "@/hooks/use-onboarding-state";
 import { useAiKeyStatus } from "@/hooks/use-ai-key-status";
 import { SIGNAL_LABELS, type SignalDimension } from "@/lib/signals";
@@ -254,11 +255,30 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        <div className="mt-14">
+          <p className="text-xs font-medium uppercase tracking-[0.25em] text-foreground/40">
+            GitHub Snapshot
+          </p>
+          <div className="mt-4">
+            <GithubSnapshot connected={!!state.participant.githubConnected} />
+          </div>
+        </div>
+
         {result?.ready && (
           <div className="mt-14">
             <p className="text-xs font-medium uppercase tracking-[0.25em] text-foreground/40">
               Builder Signals
             </p>
+
+            {!!result.interests?.length && (
+              <div className="mt-4 flex flex-wrap gap-2">
+                {result.interests.map((interest) => (
+                  <Badge key={interest} variant="secondary">
+                    {interest}
+                  </Badge>
+                ))}
+              </div>
+            )}
 
             {result.githubSummary && (
               <div className="hairline mt-4 rounded-2xl bg-card p-5">

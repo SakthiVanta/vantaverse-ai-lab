@@ -146,27 +146,57 @@ function resolveModelName(): string {
   return process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
 }
 
+export const githubNarrativeSchema = z.object({
+  headline: z.string().min(1),
+  builder_type: z.string().min(1),
+  working_style: z.string().min(1),
+  standout_evidence: z.string().min(1),
+  growth_edge: z.string().min(1),
+});
+
+export type GithubNarrative = z.infer<typeof githubNarrativeSchema>;
+
 export function buildGithubNarrativePrompt(name: string, github: GithubEvidence): string {
   return `You are the Builder Intelligence engine for Vantaverse AI Builder Lab.
 
-Write a "your GitHub says about you" read for ${name} — the way GitHub's own year-in-review talks to a builder: second person, confident, punchy, specific. Four to six sentences. Use the sharpest, most concrete details available: their dominant language(s) by weight, their strongest project theme, their most notable repo by name and stars if one stands out, their activity consistency, and their open-source contribution level. Prefer one vivid specific over three vague generalities. If the evidence is genuinely thin, say so plainly and encouragingly rather than inflating it — never invent achievements.
-
-End with one short, punchy line naming the kind of builder their GitHub evidence points to right now (e.g. "You're a fast-shipping generalist" or "You're a deep AI specialist still finding your public voice") — grounded strictly in the evidence below, not a personality guess.
+Read ${name}'s public GitHub building history the way a sharp technical co-founder would size someone up before working with them — not just what they built, but what the PATTERNS in how they built it reveal about how they work: consistency vs. bursts, breadth vs. depth, risk-taking vs. caution, fast-shipping vs. polishing, solo vs. collaborative, quantity vs. craft. This is an evidence-based behavioral read, not a clinical or personality diagnosis — ground every claim in the numbers below, never invent achievements, and don't overclaim from thin evidence.
 
 ${formatGithubEvidence(github)}
 
-Return ONLY the narrative text — no JSON, no markdown fences, no headings, no quotation marks around it.`;
+Return ONLY valid JSON matching this exact shape (no markdown fences, no commentary):
+{
+  "headline": string,          // one punchy line, GitHub-year-in-review style, second person, at most 12 words
+  "builder_type": string,      // a short tagline naming the kind of builder this evidence points to, 3-6 words, e.g. "Fast-shipping AI generalist"
+  "working_style": string,     // 2-3 sentences: what their commit cadence, language spread, and project choices reveal psychologically about HOW they work — this is the core behavioral read
+  "standout_evidence": string, // 1-2 sentences spotlighting their single most notable repo or number, named specifically
+  "growth_edge": string        // 1 sentence, honest and encouraging: the one place the evidence is thinnest right now
 }
 
-/** GitHub-only AI narrative — admin-triggered, independent of the full
+If the evidence is genuinely thin, say so plainly within the relevant field rather than inflating it.`;
+}
+
+/** GitHub-only AI read — admin-triggered, independent of the full
  * behavioral analysis (which requires challenge responses too). Always
- * uses the admin fallback key. */
-export async function runGithubNarrative(apiKey: string, name: string, github: GithubEvidence): Promise<string> {
+ * uses the admin fallback key. Structured as several short fields rather
+ * than one paragraph so the UI can render it as distinct cards. */
+export async function runGithubNarrative(
+  apiKey: string,
+  name: string,
+  github: GithubEvidence
+): Promise<GithubNarrative> {
   const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({ model: resolveModelName() });
+  const model = genAI.getGenerativeModel({
+    model: resolveModelName(),
+    generationConfig: { responseMimeType: "application/json" },
+  });
   const prompt = buildGithubNarrativePrompt(name, github);
   const result = await model.generateContent(prompt);
-  return result.response.text().trim();
+  const cleaned = result.response
+    .text()
+    .trim()
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/```\s*$/i, "");
+  return githubNarrativeSchema.parse(JSON.parse(cleaned));
 }
 
 /**

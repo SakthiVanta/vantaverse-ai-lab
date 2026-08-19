@@ -17,9 +17,13 @@ export async function GET() {
 
   return NextResponse.json({
     username: profile.username,
+    profile: profile.profile,
     repositories: profile.repositories,
     selectedRepoNames: profile.selectedRepoNames,
     contributionCalendar: profile.contributionCalendar,
+    commitContributionsLastYear: profile.commitContributionsLastYear,
+    reposContributedToLastYear: profile.reposContributedToLastYear,
+    openSourceContribution: profile.openSourceContribution,
   });
 }
 
