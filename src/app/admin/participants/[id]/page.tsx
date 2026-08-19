@@ -19,9 +19,13 @@ import {
   countOwnedNonForkRepos,
   computeRepoKpis,
   summarizeGithubActivity,
+  topLanguages,
+  topReposByStars,
   type GithubRepoInput,
 } from "@/lib/github-summary";
-import { ArrowLeft, Star, Sparkles } from "lucide-react";
+import { LANGUAGE_COLORS } from "@/lib/language-colors";
+import { parseGithubNarrative } from "@/lib/github-profile";
+import { ArrowLeft, Star, Sparkles, Brain, TrendingUp } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -191,25 +195,76 @@ export default async function ParticipantDetailPage({
               );
             })()}
 
-            {github.aiSummary ? (
-              <div className="hairline mt-5 rounded-2xl bg-background p-5">
-                <p className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-[0.2em] text-foreground/40">
-                  <Sparkles className="h-3 w-3" /> Your GitHub says about you
+            {(() => {
+              const narrative = parseGithubNarrative(github.aiSummary);
+              const generatedAt = github.aiSummaryGeneratedAt
+                ? new Date(github.aiSummaryGeneratedAt).toLocaleString()
+                : null;
+
+              if (narrative) {
+                return (
+                  <div className="mt-5 space-y-3">
+                    <div className="rounded-2xl border border-primary/20 bg-primary/5 p-5">
+                      <p className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-[0.2em] text-foreground/40">
+                        <Sparkles className="h-3 w-3" /> Your GitHub says about you
+                      </p>
+                      <p className="mt-2 font-heading text-xl font-semibold leading-snug text-foreground/95">
+                        {narrative.headline}
+                      </p>
+                      <Badge variant="secondary" className="mt-3">
+                        {narrative.builder_type}
+                      </Badge>
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <NarrativeCard
+                        icon={<Brain className="h-3.5 w-3.5" />}
+                        title="Working style"
+                        text={narrative.working_style}
+                        className="sm:row-span-2"
+                      />
+                      <NarrativeCard
+                        icon={<Star className="h-3.5 w-3.5" />}
+                        title="Standout evidence"
+                        text={narrative.standout_evidence}
+                      />
+                      <NarrativeCard
+                        icon={<TrendingUp className="h-3.5 w-3.5" />}
+                        title="Growth edge"
+                        text={narrative.growth_edge}
+                      />
+                    </div>
+                    {generatedAt && (
+                      <p className="text-[11px] text-foreground/35">Generated {generatedAt}</p>
+                    )}
+                  </div>
+                );
+              }
+
+              if (github.aiSummary) {
+                // Legacy plain-text narrative, from before this became
+                // structured cards — still readable, just not card-shaped.
+                return (
+                  <div className="hairline mt-5 rounded-2xl bg-background p-5">
+                    <p className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-[0.2em] text-foreground/40">
+                      <Sparkles className="h-3 w-3" /> Your GitHub says about you
+                    </p>
+                    <p className="mt-2 text-sm leading-relaxed text-foreground/75">
+                      {github.aiSummary}
+                    </p>
+                    <p className="mt-3 text-[11px] text-foreground/35">
+                      Generated before the card layout — click &ldquo;Analyze GitHub&rdquo; again to
+                      upgrade it.
+                    </p>
+                  </div>
+                );
+              }
+
+              return (
+                <p className="mt-5 text-sm text-foreground/45">
+                  No GitHub AI narrative yet — click &ldquo;Analyze GitHub&rdquo; above to generate one.
                 </p>
-                <p className="mt-2 text-sm leading-relaxed text-foreground/75">
-                  {github.aiSummary}
-                </p>
-                {github.aiSummaryGeneratedAt && (
-                  <p className="mt-2 text-[11px] text-foreground/35">
-                    Generated {new Date(github.aiSummaryGeneratedAt).toLocaleString()}
-                  </p>
-                )}
-              </div>
-            ) : (
-              <p className="mt-5 text-sm text-foreground/45">
-                No GitHub AI narrative yet — click &ldquo;Analyze GitHub&rdquo; above to generate one.
-              </p>
-            )}
+              );
+            })()}
 
             {(() => {
               const repos = (github.repositories as GithubRepoInput[] | null) ?? [];
@@ -290,7 +345,7 @@ export default async function ParticipantDetailPage({
             })()}
 
             {(() => {
-              const repos = topRepos(github.repositories);
+              const repos = topReposByStars((github.repositories as GithubRepoInput[] | null) ?? []);
               if (!repos.length) return null;
               return (
                 <div className="mt-6">
@@ -405,45 +460,25 @@ function StatTile({ label, value }: { label: string; value: string | number }) {
   );
 }
 
-const LANGUAGE_COLORS = [
-  "#e8b84b",
-  "#5b8dd6",
-  "#d67abf",
-  "#6bc48f",
-  "#e06b6b",
-  "#9c7fe0",
-  "#4fb8c4",
-  "#c4924f",
-];
-
-/** Top languages by byte-weighted percentage, filtering the long tail of
- * near-zero entries a raw byte breakdown always produces, and folding
- * whatever's left into a single "Other" slice so the total still sums to
- * ~100%. */
-function topLanguages(
-  breakdown: Record<string, number>,
-  { threshold = 1, max = 6 }: { threshold?: number; max?: number } = {}
-): [string, number][] {
-  const sorted = Object.entries(breakdown)
-    .filter(([, pct]) => pct >= threshold)
-    .sort((a, b) => b[1] - a[1]);
-  if (sorted.length <= max) return sorted;
-  const top = sorted.slice(0, max - 1);
-  const otherPct = sorted.slice(max - 1).reduce((sum, [, pct]) => sum + pct, 0);
-  return otherPct > 0 ? [...top, ["Other", otherPct]] : top;
-}
-
-/** Owned, non-fork, non-archived repos ranked by stars (falling back to
- * recency for repos with none), capped for a compact list. */
-function topRepos(repositories: unknown, max = 5): GithubRepoInput[] {
-  if (!Array.isArray(repositories)) return [];
-  return (repositories as GithubRepoInput[])
-    .filter((r) => !r.fork && !r.archived)
-    .sort((a, b) => {
-      if (b.stargazersCount !== a.stargazersCount) return b.stargazersCount - a.stargazersCount;
-      return new Date(b.pushedAt).getTime() - new Date(a.pushedAt).getTime();
-    })
-    .slice(0, max);
+function NarrativeCard({
+  icon,
+  title,
+  text,
+  className = "",
+}: {
+  icon: React.ReactNode;
+  title: string;
+  text: string;
+  className?: string;
+}) {
+  return (
+    <div className={`hairline rounded-2xl bg-background p-4 ${className}`}>
+      <p className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-foreground/45">
+        {icon} {title}
+      </p>
+      <p className="mt-2 text-sm leading-relaxed text-foreground/75">{text}</p>
+    </div>
+  );
 }
 
 function describeOpenSourceSignal(

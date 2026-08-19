@@ -50,6 +50,36 @@ export function computeRepoKpis(repos: GithubRepoInput[]) {
   };
 }
 
+/** Top languages by byte-weighted percentage, filtering the long tail of
+ * near-zero entries a raw byte breakdown always produces, and folding
+ * whatever's left into a single "Other" slice so the total still sums to
+ * ~100%. Shared by the admin view and the participant dashboard so both
+ * read the same language mix the same way. */
+export function topLanguages(
+  breakdown: Record<string, number>,
+  { threshold = 1, max = 6 }: { threshold?: number; max?: number } = {}
+): [string, number][] {
+  const sorted = Object.entries(breakdown)
+    .filter(([, pct]) => pct >= threshold)
+    .sort((a, b) => b[1] - a[1]);
+  if (sorted.length <= max) return sorted;
+  const top = sorted.slice(0, max - 1);
+  const otherPct = sorted.slice(max - 1).reduce((sum, [, pct]) => sum + pct, 0);
+  return otherPct > 0 ? [...top, ["Other", otherPct]] : top;
+}
+
+/** Owned, non-fork, non-archived repos ranked by stars (falling back to
+ * recency for repos with none), capped for a compact list. */
+export function topReposByStars(repos: GithubRepoInput[], max = 5): GithubRepoInput[] {
+  return repos
+    .filter((r) => !r.fork && !r.archived)
+    .sort((a, b) => {
+      if (b.stargazersCount !== a.stargazersCount) return b.stargazersCount - a.stargazersCount;
+      return new Date(b.pushedAt).getTime() - new Date(a.pushedAt).getTime();
+    })
+    .slice(0, max);
+}
+
 const THEME_KEYWORDS: Record<string, string[]> = {
   AI: [
     "ai",
