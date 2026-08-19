@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/db";
-import { participants, githubProfiles } from "@/db/schema";
-import { eq } from "drizzle-orm";
 import { verifySession } from "@/lib/session";
-import { exchangeGithubCode, fetchGithubProfileData } from "@/lib/github";
-import { summarizeGithubActivity, deriveContributionSignal } from "@/lib/github-summary";
+import { exchangeGithubCode } from "@/lib/github";
+import { connectGithubProfile } from "@/lib/github-profile";
 import { logEvent } from "@/lib/events";
 
 export async function GET(req: NextRequest) {
@@ -24,59 +21,12 @@ export async function GET(req: NextRequest) {
 
   try {
     const accessToken = await exchangeGithubCode(code);
-    const profile = await fetchGithubProfileData(accessToken);
-    const summary = summarizeGithubActivity(profile.repos);
-    const openSourceContribution = deriveContributionSignal({
-      totalCommitContributions: profile.commitContributionsLastYear,
-      totalRepositoriesWithContributedCommits: profile.reposContributedToLastYear,
-    });
+    // preserveSelection: false — a reconnect keeps whatever the builder
+    // previously curated (selectedRepoNames is untouched by this save);
+    // the picker page decides the default only when it's still null.
+    const { username } = await connectGithubProfile(participantId, accessToken);
 
-    const existing = await db.query.githubProfiles.findFirst({
-      where: eq(githubProfiles.participantId, participantId),
-    });
-
-    const values = {
-      username: profile.login,
-      profile: {
-        name: profile.name,
-        bio: profile.bio,
-        avatarUrl: profile.avatarUrl,
-        followers: profile.followers,
-        publicRepos: profile.publicRepos,
-        createdAt: profile.createdAt,
-      },
-      repositories: profile.repos,
-      languageBreakdown: summary.languageBreakdown,
-      projectThemes: summary.projectThemes,
-      activitySignal: summary.activitySignal,
-      aiProjectEvidence: summary.aiProjectEvidence,
-      commitContributionsLastYear: profile.commitContributionsLastYear,
-      reposContributedToLastYear: profile.reposContributedToLastYear,
-      openSourceContribution,
-      contributionCalendar: profile.contributionCalendar,
-      fetchedAt: new Date(),
-      // selectedRepoNames intentionally omitted — a reconnect keeps
-      // whatever the builder previously curated; the picker page decides
-      // the default (non-fork/non-archived) only when it's still null.
-    };
-
-    if (existing) {
-      await db.update(githubProfiles).set(values).where(eq(githubProfiles.id, existing.id));
-    } else {
-      await db.insert(githubProfiles).values({ participantId, ...values });
-    }
-
-    await db
-      .update(participants)
-      .set({
-        githubUsername: profile.login,
-        githubConnected: true,
-        githubConnectedAt: new Date(),
-        updatedAt: new Date(),
-      })
-      .where(eq(participants.id, participantId));
-
-    await logEvent(participantId, "github_connected", { username: profile.login });
+    await logEvent(participantId, "github_connected", { username });
 
     const selectReposUrl = new URL("/onboarding/github/select-repos", appUrl);
     selectReposUrl.searchParams.set("returnTo", returnTo);

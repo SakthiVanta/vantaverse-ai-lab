@@ -192,6 +192,11 @@ export const githubProfiles = pgTable("github_profiles", {
   // string[] | null — null means "no selection made yet" (treat as "all
   // repos", the pre-existing behavior) so old rows stay valid unmigrated.
   selectedRepoNames: jsonb("selected_repo_names"),
+  // Encrypted GitHub OAuth token, stored so admins can trigger a fresh
+  // re-fetch later without asking the builder to reconnect. Nullable —
+  // profiles saved before this column existed have no stored token and
+  // must reconnect once to enable refresh.
+  githubAccessTokenEncrypted: text("github_access_token_encrypted"),
   // GitHub's own weeks/contributionDays shape, stored as fetched — powers
   // the profile activity heatmap. Account-wide, not affected by repo selection.
   contributionCalendar: jsonb("contribution_calendar"),
