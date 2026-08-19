@@ -124,7 +124,7 @@ function ProfilePageContent() {
         </div>
 
         <div className="mt-10">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-2">
               <GitFork className="h-4 w-4 text-foreground/50" />
               <p className="text-xs font-medium uppercase tracking-[0.25em] text-foreground/40">
@@ -132,7 +132,7 @@ function ProfilePageContent() {
               </p>
             </div>
             {state?.participant?.githubConnected && (
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
                 <Link
                   href="/onboarding/github/select-repos?returnTo=/onboarding/profile"
                   className="flex items-center gap-1 text-xs font-medium text-foreground/50 hover:text-foreground"

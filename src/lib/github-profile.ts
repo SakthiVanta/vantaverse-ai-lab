@@ -96,7 +96,12 @@ async function saveGithubProfile(
     .set({
       githubUsername: profile.login,
       githubConnected: true,
-      githubConnectedAt: new Date(),
+      // Only stamped on a genuinely first-time connect — a refresh must
+      // never bump this, or the dashboard's "was this report generated
+      // before GitHub was connected" staleness check (which compares
+      // against this timestamp) would wrongly flag every report as
+      // stale after every single refresh, forever.
+      ...(existing ? {} : { githubConnectedAt: new Date() }),
       updatedAt: new Date(),
     })
     .where(eq(participants.id, participantId));
