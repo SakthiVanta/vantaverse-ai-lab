@@ -15,7 +15,12 @@ import { ParticipantActions } from "@/components/admin/participant-actions";
 import { Badge } from "@/components/ui/badge";
 import { getSpiritById } from "@/lib/spirits";
 import { CHALLENGES } from "@/lib/challenges";
-import { countOwnedNonForkRepos, type GithubRepoInput } from "@/lib/github-summary";
+import {
+  countOwnedNonForkRepos,
+  computeRepoKpis,
+  summarizeGithubActivity,
+  type GithubRepoInput,
+} from "@/lib/github-summary";
 import { ArrowLeft, Star, Sparkles } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -206,14 +211,24 @@ export default async function ParticipantDetailPage({
               </p>
             )}
 
-            <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
-              <StatTile label="Repos analyzed" value={countOwnedNonForkRepos(github.repositories)} />
-              <StatTile label="Activity" value={github.activitySignal ?? "—"} />
-              <StatTile label="AI project evidence" value={github.aiProjectEvidence ?? "—"} />
-              <StatTile label="Commits (last ~year)" value={github.commitContributionsLastYear ?? 0} />
-              <StatTile label="Repos contributed to" value={github.reposContributedToLastYear ?? 0} />
-              <StatTile label="Open-source signal" value={github.openSourceContribution ?? "—"} />
-            </div>
+            {(() => {
+              const repos = (github.repositories as GithubRepoInput[] | null) ?? [];
+              const { totalStars, totalForks } = computeRepoKpis(repos);
+              const diversity = summarizeGithubActivity(repos).projectDiversity;
+              return (
+                <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  <StatTile label="Repos analyzed" value={countOwnedNonForkRepos(github.repositories)} />
+                  <StatTile label="Activity" value={github.activitySignal ?? "—"} />
+                  <StatTile label="AI project evidence" value={github.aiProjectEvidence ?? "—"} />
+                  <StatTile label="Stars earned" value={totalStars} />
+                  <StatTile label="Forks earned" value={totalForks} />
+                  <StatTile label="Project diversity" value={diversity} />
+                  <StatTile label="Commits (last ~year)" value={github.commitContributionsLastYear ?? 0} />
+                  <StatTile label="Repos contributed to" value={github.reposContributedToLastYear ?? 0} />
+                  <StatTile label="Open-source signal" value={github.openSourceContribution ?? "—"} />
+                </div>
+              );
+            })()}
 
             {(() => {
               const themes = ((github.projectThemes as string[]) ?? []).filter(Boolean);

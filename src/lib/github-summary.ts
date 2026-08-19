@@ -33,6 +33,23 @@ export function countOwnedNonForkRepos(repos: unknown): number {
   ).length;
 }
 
+/** Stars/forks earned and the single most-starred repo, over owned
+ * non-fork/non-archived repos — a "reception" read on top of the
+ * "activity" and "themes" signals above. */
+export function computeRepoKpis(repos: GithubRepoInput[]) {
+  const relevant = repos.filter((r) => !r.fork && !r.archived);
+  const totalStars = relevant.reduce((sum, r) => sum + r.stargazersCount, 0);
+  const totalForks = relevant.reduce((sum, r) => sum + r.forksCount, 0);
+  const topRepo = [...relevant].sort((a, b) => b.stargazersCount - a.stargazersCount)[0] ?? null;
+  return {
+    totalStars,
+    totalForks,
+    topRepo: topRepo
+      ? { name: topRepo.name, description: topRepo.description, stars: topRepo.stargazersCount }
+      : null,
+  };
+}
+
 const THEME_KEYWORDS: Record<string, string[]> = {
   AI: [
     "ai",

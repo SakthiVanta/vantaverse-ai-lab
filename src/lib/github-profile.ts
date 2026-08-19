@@ -3,7 +3,12 @@ import { githubProfiles, participants } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { encryptSecret, decryptSecret } from "@/lib/crypto";
 import { fetchGithubProfileData } from "@/lib/github";
-import { summarizeGithubActivity, deriveContributionSignal } from "@/lib/github-summary";
+import {
+  summarizeGithubActivity,
+  deriveContributionSignal,
+  computeRepoKpis,
+  type GithubRepoInput,
+} from "@/lib/github-summary";
 import { runGithubNarrative } from "@/lib/gemini";
 import { requireAdminFallbackKey } from "@/lib/ai-key";
 
@@ -118,6 +123,8 @@ export async function runGithubAiAnalysis(participantId: string) {
   ]);
   if (!profileRow) throw new Error("GitHub profile not found after refresh.");
 
+  const repoKpis = computeRepoKpis((profileRow.repositories as GithubRepoInput[]) ?? []);
+
   const apiKey = requireAdminFallbackKey();
   const aiSummary = await runGithubNarrative(apiKey, participant?.name ?? username, {
     username,
@@ -129,6 +136,8 @@ export async function runGithubAiAnalysis(participantId: string) {
     commitContributionsLastYear: profileRow.commitContributionsLastYear ?? 0,
     reposContributedToLastYear: profileRow.reposContributedToLastYear ?? 0,
     openSourceContribution: profileRow.openSourceContribution ?? "Limited",
+    projectDiversity: summary.projectDiversity,
+    ...repoKpis,
   });
 
   await db

@@ -104,6 +104,29 @@ export default function DashboardPage() {
     }
   };
 
+  const refreshAnalysis = async () => {
+    setAnalyzing(true);
+    try {
+      const del = await fetch("/api/onboarding/analyze", { method: "DELETE" });
+      if (!del.ok) {
+        toast.error("Couldn't refresh your analysis");
+        return;
+      }
+      const res = await fetch("/api/onboarding/analyze", { method: "POST" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(data.error ?? "Couldn't refresh your analysis");
+        return;
+      }
+      await loadResult();
+      toast.success("Your report now reflects your connected GitHub");
+    } catch {
+      toast.error("You're offline — check your connection and try again.");
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+
   return (
     <OnboardingShell wide>
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
@@ -245,6 +268,22 @@ export default function DashboardPage() {
                 <p className="mt-2 text-sm leading-relaxed text-foreground/75">
                   {result.githubSummary}
                 </p>
+                {result.githubStale && keyStatus?.hasKey && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="mt-4 gap-1.5"
+                    disabled={analyzing}
+                    onClick={refreshAnalysis}
+                  >
+                    {analyzing ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Sparkles className="h-3.5 w-3.5" />
+                    )}
+                    {analyzing ? "Refreshing…" : "Refresh analysis with GitHub"}
+                  </Button>
+                )}
               </div>
             )}
 
